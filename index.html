@@ -199,7 +199,7 @@
       border-left: 5px solid var(--accent);
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       margin-bottom: 12px;
       gap: 12px;
       box-shadow: var(--shadow-soft);
@@ -217,9 +217,18 @@
     .ev-title {
       font-weight: 600;
       font-size: 14px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       word-break: break-word;
       line-height: 1.45;
+    }
+
+    .ev-note {
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 8px;
     }
 
     .ev-time {
@@ -245,6 +254,8 @@
       border-radius: 30px 30px 0 0;
       padding: 30px 20px calc(30px + env(safe-area-inset-bottom));
       box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+      max-height: 92vh;
+      overflow-y: auto;
     }
 
     .modal-content h2 {
@@ -255,7 +266,8 @@
     .field,
     .ai-card input,
     #voiceText,
-    #aiInp {
+    #aiInp,
+    #evNotes {
       width: 100%;
       padding: 14px;
       border: 1px solid var(--border);
@@ -270,16 +282,23 @@
 
     .field,
     .ai-card input,
-    #voiceText {
+    #voiceText,
+    #evNotes {
       margin-bottom: 15px;
     }
 
     .field:focus,
     .ai-card input:focus,
     #voiceText:focus,
-    #aiInp:focus {
+    #aiInp:focus,
+    #evNotes:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(99, 50, 227, 0.08);
+    }
+
+    #evNotes {
+      min-height: 110px;
+      resize: vertical;
     }
 
     .ai-card {
@@ -416,6 +435,7 @@
       padding: 6px;
       border-radius: 10px;
       flex-shrink: 0;
+      margin-top: 2px;
     }
 
     .mini-btn:active {
@@ -668,15 +688,19 @@
     <div class="modal-overlay" id="addModal" onclick="closeModalOnOverlay(event)">
       <div class="modal-content">
         <h2>Новое поручение</h2>
+
         <select id="evType" class="field">
           <option value="court">Судебный процесс</option>
           <option value="consult">Консультация</option>
           <option value="task">Задача</option>
         </select>
-        <input type="text" id="evTitle" class="field" placeholder="Суть дела / Имя клиента" maxlength="180" />
+
+        <input type="text" id="evTitle" class="field" placeholder="Заголовок / клиент" maxlength="180" />
         <input type="date" id="evDate" class="field" />
         <input type="time" id="evTime" class="field" />
-        <button class="btn" style="background:var(--accent)" onclick="saveEvent()">Запланировать</button>
+        <textarea id="evNotes" placeholder="Комментарий / суть поручения"></textarea>
+
+        <button class="btn" style="background:var(--accent)" onclick="saveEvent()">Добавить в календарь</button>
       </div>
     </div>
   </div>
@@ -742,7 +766,8 @@
             type: normalizeEventType(item.type),
             title: typeof item.title === 'string' ? item.title.trim() : '',
             date: typeof item.date === 'string' ? item.date : '',
-            time: normalizeTimeValue(item.time)
+            time: normalizeTimeValue(item.time),
+            notes: typeof item.notes === 'string' ? item.notes.trim() : ''
           }))
           .filter(item => item.title && item.date);
       } catch {
@@ -778,8 +803,8 @@
     }
 
     function compareEventDateTime(a, b) {
-      const left = `${a.date} ${normalizeTimeValue(a.time) || '99:99'}`;
-      const right = `${b.date} ${normalizeTimeValue(b.time) || '99:99'}`;
+      const left = `${a.date} ${normalizeTimeValue(a.time) || '99:99'} ${a.title}`;
+      const right = `${b.date} ${normalizeTimeValue(b.time) || '99:99'} ${b.title}`;
       return left.localeCompare(right);
     }
 
@@ -804,14 +829,19 @@
 
       const time = document.createElement('div');
       time.className = 'ev-time';
-
-      if (withDelete) {
-        time.textContent = normalizeTimeValue(event.time) || '--:--';
-      } else {
-        time.textContent = `${event.date} | ${normalizeTimeValue(event.time) || '--:--'}`;
-      }
+      time.textContent = withDelete
+        ? (normalizeTimeValue(event.time) || '--:--')
+        : `${event.date} | ${normalizeTimeValue(event.time) || '--:--'}`;
 
       main.appendChild(title);
+
+      if (event.notes) {
+        const note = document.createElement('div');
+        note.className = 'ev-note';
+        note.textContent = event.notes;
+        main.appendChild(note);
+      }
+
       main.appendChild(time);
       wrapper.appendChild(main);
 
@@ -989,6 +1019,7 @@
       document.getElementById('evTitle').value = '';
       document.getElementById('evDate').value = getLocalDateStr();
       document.getElementById('evTime').value = '';
+      document.getElementById('evNotes').value = '';
     }
 
     function saveEvent() {
@@ -996,9 +1027,10 @@
       const title = document.getElementById('evTitle').value.trim();
       const date = document.getElementById('evDate').value;
       const time = normalizeTimeValue(document.getElementById('evTime').value);
+      const notes = document.getElementById('evNotes').value.trim();
 
       if (!title || !date) {
-        alert('Введите название и дату');
+        alert('Введите заголовок и дату');
         return;
       }
 
@@ -1006,7 +1038,8 @@
         event.type === type &&
         event.title === title &&
         event.date === date &&
-        (event.time || '') === (time || '')
+        (event.time || '') === (time || '') &&
+        (event.notes || '') === notes
       );
 
       if (duplicate) {
@@ -1034,12 +1067,16 @@
         type,
         title,
         date,
-        time
+        time,
+        notes
       });
 
       events.sort(compareEventDateTime);
       saveEvents();
       selDateStr = date;
+      currDate = new Date(date + 'T00:00:00');
+      currDate = new Date(currDate.getFullYear(), currDate.getMonth(), 1);
+
       closeModal();
       clearEventForm();
       renderHome();
@@ -1065,8 +1102,7 @@
       const todayStr = getLocalDateStr(now);
       const lastBrief = localStorage.getItem(STORAGE_LAST_BRIEF_KEY);
 
-      const isAfterNine = now.getHours() >= 9;
-      if (isAfterNine && lastBrief !== todayStr) {
+      if (now.getHours() >= 9 && lastBrief !== todayStr) {
         showDailyBrief();
         localStorage.setItem(STORAGE_LAST_BRIEF_KEY, todayStr);
       }
@@ -1111,7 +1147,6 @@
           'Ты элитный цифровой секретарь Байтелеу Сериковича. Составь краткий утренний отчет. Пиши строго сплошным профессиональным текстом. Запрещено использовать списки.',
           'Подготовь текст по расписанию: ' + rawPlan
         );
-
         content.textContent = aiText || rawPlan;
       } catch {
         content.textContent = rawPlan;
@@ -1130,9 +1165,7 @@
     async function askGemini(key, systemText, userText) {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${encodeURIComponent(key)}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: {
             parts: [{ text: systemText }]
@@ -1198,7 +1231,6 @@
           'Ты элитный юридический помощник юриста с 19-летним опытом. Пиши строго сплошным профессиональным текстом без списков.',
           text
         );
-
         addMsg('ai', aiText);
       } catch {
         addMsg('ai', 'Сбой системы. Проверьте ключ API, соединение или лимиты модели.');
@@ -1317,8 +1349,16 @@
       }
     }
 
+    function normalizeVoiceText(text) {
+      return String(text || '')
+        .replace(/\s+/g, ' ')
+        .replace(/[，]/g, ',')
+        .trim();
+    }
+
     function parseVoiceDateTime(rawText) {
-      const text = String(rawText || '').trim();
+      const originalText = normalizeVoiceText(rawText);
+      const text = originalText.toLowerCase();
       const now = new Date();
 
       let foundTime = '';
@@ -1344,50 +1384,89 @@
         foundTime = `${String(timeMatch[1]).padStart(2, '0')}:${timeMatch[2]}`;
       }
 
-      if (/\bсегодня\b/i.test(text)) {
-        foundDate = getLocalDateStr(now);
-      } else if (/\bзавтра\b/i.test(text)) {
+      const fullDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/);
+      if (fullDateMatch) {
+        let dd = Number(fullDateMatch[1]);
+        let mm = Number(fullDateMatch[2]) - 1;
+        let yy = Number(fullDateMatch[3]);
+        if (yy < 100) yy += 2000;
+
+        const parsed = new Date(yy, mm, dd);
+        if (!Number.isNaN(parsed.getTime())) {
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
+      }
+
+      const monthNamePattern = /(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)/i;
+      const verbalDateRegex = new RegExp(
+        String.raw`\b(\d{1,2})(?:-?(?:й|я|е|го))?\s+` +
+        String.raw`(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)` +
+        String.raw`(?:\s+(\d{2,4})(?:-?(?:й|я|е|го))?)?` +
+        String.raw`(?:\s*(?:года|год|г))?\b`,
+        'i'
+      );
+
+      const verbalDateMatch = text.match(verbalDateRegex);
+      if (verbalDateMatch) {
+        const dd = Number(verbalDateMatch[1]);
+        const mm = months[verbalDateMatch[2].toLowerCase()];
+        let yy = verbalDateMatch[3] ? Number(verbalDateMatch[3]) : now.getFullYear();
+
+        if (yy < 100) yy += 2000;
+
+        const parsed = new Date(yy, mm, dd);
+        if (!Number.isNaN(parsed.getTime())) {
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
+      }
+
+      const shortDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})\b/);
+      if (shortDateMatch) {
+        const dd = Number(shortDateMatch[1]);
+        const mm = Number(shortDateMatch[2]) - 1;
+        const yy = now.getFullYear();
+
+        const parsed = new Date(yy, mm, dd);
+        if (!Number.isNaN(parsed.getTime())) {
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
+      }
+
+      const dayMonthOnlyRegex = new RegExp(
+        String.raw`\b(\d{1,2})(?:-?(?:й|я|е|го))?\s+` +
+        String.raw`(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)\b`,
+        'i'
+      );
+      const dayMonthOnlyMatch = text.match(dayMonthOnlyRegex);
+      if (dayMonthOnlyMatch) {
+        const dd = Number(dayMonthOnlyMatch[1]);
+        const mm = months[dayMonthOnlyMatch[2].toLowerCase()];
+        const yy = now.getFullYear();
+
+        const parsed = new Date(yy, mm, dd);
+        if (!Number.isNaN(parsed.getTime())) {
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
+      }
+
+      if (/\bзавтра\b/i.test(text)) {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         foundDate = getLocalDateStr(tomorrow);
-      } else {
-        const fullDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/);
-        if (fullDateMatch) {
-          let dd = Number(fullDateMatch[1]);
-          let mm = Number(fullDateMatch[2]) - 1;
-          let yy = Number(fullDateMatch[3]);
-
-          if (yy < 100) yy += 2000;
-
-          const parsed = new Date(yy, mm, dd);
-          if (!Number.isNaN(parsed.getTime())) {
-            foundDate = getLocalDateStr(parsed);
-          }
-        } else {
-          const shortDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})\b/);
-          if (shortDateMatch) {
-            let dd = Number(shortDateMatch[1]);
-            let mm = Number(shortDateMatch[2]) - 1;
-            let yy = now.getFullYear();
-
-            const parsed = new Date(yy, mm, dd);
-            if (!Number.isNaN(parsed.getTime())) {
-              foundDate = getLocalDateStr(parsed);
-            }
-          } else {
-            const monthDateMatch = text.match(/\b(\d{1,2})\s+(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)\b/i);
-            if (monthDateMatch) {
-              const dd = Number(monthDateMatch[1]);
-              const mm = months[monthDateMatch[2].toLowerCase()];
-              const yy = now.getFullYear();
-
-              const parsed = new Date(yy, mm, dd);
-              if (!Number.isNaN(parsed.getTime())) {
-                foundDate = getLocalDateStr(parsed);
-              }
-            }
-          }
-        }
+      } else if (/\bсегодня\b/i.test(text)) {
+        foundDate = getLocalDateStr(now);
       }
 
       return {
@@ -1411,8 +1490,7 @@
     }
 
     function autoSaveVoiceTask(text) {
-      const cleanText = String(text || '').trim();
-
+      const cleanText = normalizeVoiceText(text);
       if (!cleanText) return;
 
       const parsed = parseVoiceDateTime(cleanText);
@@ -1437,7 +1515,8 @@
         type,
         title: cleanText,
         date: parsed.date,
-        time: parsed.time
+        time: parsed.time,
+        notes: ''
       });
 
       events.sort(compareEventDateTime);
