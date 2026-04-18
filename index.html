@@ -8,10 +8,6 @@
   <title>aibulatov.ai</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- PDF -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs" type="module"></script>
-  <!-- DOCX -->
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 
   <style>
@@ -28,6 +24,8 @@
       --court: #4A90E2;
       --task: #9B51E0;
       --consult: #2EBD85;
+      --call: #F59E0B;
+      --meeting: #14B8A6;
       --shadow: 0 6px 18px rgba(0,0,0,0.05);
       --shadow-soft: 0 3px 10px rgba(0,0,0,0.04);
       --msg-ai-bg: #F0F2F5;
@@ -48,6 +46,8 @@
       --court: #6AABF7;
       --task: #B97EF5;
       --consult: #3ED69A;
+      --call: #FBBF24;
+      --meeting: #2DD4BF;
       --shadow: 0 6px 18px rgba(0,0,0,0.35);
       --shadow-soft: 0 3px 10px rgba(0,0,0,0.25);
       --msg-ai-bg: #2A2A2E;
@@ -106,9 +106,8 @@
       display: block;
     }
 
-    /* Header */
     .header {
-      padding: 24px 0 18px;
+      padding: 24px 0 16px;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -140,7 +139,7 @@
     .screen-title {
       font-size: 18px;
       font-weight: 600;
-      margin: 4px 0 18px;
+      margin: 4px 0 16px;
     }
 
     .theme-toggle-btn {
@@ -177,7 +176,70 @@
       transform: translateX(20px);
     }
 
-    /* Actions */
+    .search-input,
+    .field,
+    #voiceText,
+    #aiInp,
+    #evNotes,
+    #apiKey {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 15px;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color .2s ease, box-shadow .2s ease, background .25s ease, color .25s ease;
+    }
+
+    .search-input:focus,
+    .field:focus,
+    #voiceText:focus,
+    #aiInp:focus,
+    #evNotes:focus,
+    #apiKey:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,50,227,0.10);
+    }
+
+    .search-wrap {
+      margin-bottom: 14px;
+    }
+
+    .mode-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 14px;
+      scrollbar-width: none;
+    }
+
+    .mode-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mode-chip {
+      white-space: nowrap;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .mode-chip.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
     .actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -224,7 +286,6 @@
       min-height: 15px;
     }
 
-    /* Banners */
     .conflict-banner {
       background: var(--danger-soft);
       border: 1px solid var(--danger);
@@ -241,7 +302,7 @@
       border: 1px solid var(--accent);
       border-radius: 18px;
       padding: 18px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       display: none;
       box-shadow: var(--shadow-soft);
     }
@@ -260,7 +321,6 @@
       white-space: pre-wrap;
     }
 
-    /* Dashboard */
     .dashboard {
       margin-top: 8px;
     }
@@ -285,11 +345,14 @@
       margin-bottom: 12px;
       gap: 12px;
       box-shadow: var(--shadow-soft);
+      cursor: pointer;
     }
 
     .ev-item.court { border-left-color: var(--court); }
     .ev-item.task { border-left-color: var(--task); }
     .ev-item.consult { border-left-color: var(--consult); }
+    .ev-item.call { border-left-color: var(--call); }
+    .ev-item.meeting { border-left-color: var(--meeting); }
 
     .ev-main {
       min-width: 0;
@@ -319,7 +382,19 @@
       line-height: 1.4;
     }
 
-    /* Modal */
+    .mini-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 6px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -345,44 +420,98 @@
     .modal-content h2 {
       font-weight: 600;
       margin-bottom: 18px;
-      font-size: 28px;
+      font-size: 26px;
       line-height: 1.1;
-    }
-
-    /* Fields */
-    .field,
-    #voiceText,
-    #aiInp,
-    #evNotes,
-    #apiKey {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-family: inherit;
-      font-size: 15px;
-      outline: none;
-      background: var(--surface);
-      color: var(--text);
-      transition: border-color .2s ease, box-shadow .2s ease, background .25s ease, color .25s ease;
-      margin-bottom: 14px;
-    }
-
-    .field:focus,
-    #voiceText:focus,
-    #aiInp:focus,
-    #evNotes:focus,
-    #apiKey:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(99,50,227,0.10);
     }
 
     #evNotes {
       min-height: 110px;
       resize: vertical;
+      margin-bottom: 14px;
     }
 
-    /* AI */
+    .detail-head {
+      margin-bottom: 14px;
+    }
+
+    .detail-type {
+      display: inline-block;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .detail-title {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      word-break: break-word;
+    }
+
+    .detail-meta {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-bottom: 12px;
+      white-space: pre-wrap;
+    }
+
+    .detail-note {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      white-space: pre-wrap;
+      margin-bottom: 16px;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .detail-btn {
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      line-height: 1.35;
+    }
+
+    .detail-btn.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .detail-btn.danger {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .section-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
     .ai-msgs {
       height: 360px;
       overflow-y: auto;
@@ -429,7 +558,6 @@
       border-bottom-left-radius: 8px;
     }
 
-    /* Upload */
     .upload-zone {
       border: 2px dashed var(--border);
       border-radius: 16px;
@@ -508,14 +636,8 @@
       cursor: pointer;
       text-align: left;
       line-height: 1.4;
-      transition: border-color .15s ease, background .25s ease;
     }
 
-    .quick-btn:active {
-      border-color: var(--accent);
-    }
-
-    /* Nav */
     .nav {
       position: sticky;
       bottom: 0;
@@ -550,7 +672,6 @@
       font-size: 22px;
     }
 
-    /* Buttons */
     .btn {
       background: var(--text);
       color: white;
@@ -581,20 +702,6 @@
       border: 1px solid var(--accent);
     }
 
-    .mini-btn {
-      background: none;
-      border: none;
-      color: var(--danger);
-      font-size: 20px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 6px;
-      border-radius: 10px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    /* Calendar */
     .cal-header {
       display: flex;
       justify-content: space-between;
@@ -696,7 +803,6 @@
       border-radius: 16px;
     }
 
-    /* Alarm */
     .alarm-overlay {
       position: fixed;
       inset: 0;
@@ -745,7 +851,6 @@
       white-space: pre-wrap;
     }
 
-    /* Toasts */
     .toasts {
       position: fixed;
       top: 16px;
@@ -812,7 +917,6 @@
   <div class="app">
     <div class="main">
 
-      <!-- HOME -->
       <div id="p-home" class="section active">
         <div class="header">
           <div class="header-left">
@@ -822,10 +926,24 @@
           <button class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Переключить тему"></button>
         </div>
 
+        <div class="search-wrap">
+          <input id="homeSearch" class="search-input" type="text" placeholder="Поиск по делам, датам, заметкам..." />
+        </div>
+
         <div id="dailyBriefBox" class="daily-brief">
           <div class="brief-title">Брифинг</div>
           <div id="briefContent" class="brief-text">Подготовка аналитики...</div>
           <button class="btn btn-secondary" onclick="closeBrief()" style="margin-top:12px;">Ознакомлен</button>
+        </div>
+
+        <div class="section-label">Режим быстрой диктовки</div>
+        <div class="mode-row" id="modeRow">
+          <button class="mode-chip active" data-mode="auto" onclick="setQuickMode('auto')">Авто</button>
+          <button class="mode-chip" data-mode="court" onclick="setQuickMode('court')">Суд</button>
+          <button class="mode-chip" data-mode="consult" onclick="setQuickMode('consult')">Консультация</button>
+          <button class="mode-chip" data-mode="task" onclick="setQuickMode('task')">Задача</button>
+          <button class="mode-chip" data-mode="call" onclick="setQuickMode('call')">Звонок</button>
+          <button class="mode-chip" data-mode="meeting" onclick="setQuickMode('meeting')">Встреча</button>
         </div>
 
         <div class="actions">
@@ -835,7 +953,7 @@
             <div class="timer" id="timer"></div>
           </div>
 
-          <div class="action-btn" onclick="openModal()">
+          <div class="action-btn" onclick="openManualModal()">
             <div style="font-size:38px;margin-bottom:10px;">✍️</div>
             <div style="font-weight:600;font-size:13px;color:var(--text-dim);">Текст</div>
           </div>
@@ -844,18 +962,17 @@
         <div id="voiceResult" style="display:none;margin-bottom:25px;">
           <label for="voiceText" class="sr-only">Результат диктовки</label>
           <textarea id="voiceText" rows="4" placeholder="Здесь появится текст диктовки..."></textarea>
-          <div class="muted" style="font-size:12px;margin-top:-4px;">После остановки микрофона запись сохраняется автоматически.</div>
+          <div class="muted" style="font-size:12px;margin-top:8px;">После остановки микрофона запись сохраняется автоматически.</div>
         </div>
 
         <div id="homeConflicts"></div>
 
         <div class="dashboard">
-          <div class="dash-title">Ближайшие дела</div>
+          <div class="dash-title" id="homeListTitle">Ближайшие дела</div>
           <div id="homeUpcomingList"></div>
         </div>
       </div>
 
-      <!-- CALENDAR -->
       <div id="p-cal" class="section">
         <div class="header">
           <div class="header-left">
@@ -881,11 +998,10 @@
 
         <div class="cal-grid" id="calGrid"></div>
 
-        <button class="btn" style="background:var(--accent);margin-top:25px;" onclick="openModal()">+ Новая запись</button>
+        <button class="btn" style="background:var(--accent);margin-top:25px;" onclick="openManualModal()">+ Новая запись</button>
         <div id="dayEvents" style="margin-top:25px;"></div>
       </div>
 
-      <!-- AI -->
       <div id="p-ai" class="section">
         <div class="header">
           <div class="header-left">
@@ -910,23 +1026,21 @@
         <div id="uploadedFilesList"></div>
 
         <div id="quickActions" style="display:none;">
-          <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Быстрые действия</div>
+          <div class="section-label">Быстрые действия по документу</div>
           <div class="quick-grid">
-            <button class="quick-btn" onclick="quickAction('analyze')">🔍 Анализ документа</button>
-            <button class="quick-btn" onclick="quickAction('strategy')">💡 Стратегия защиты</button>
-            <button class="quick-btn" onclick="quickAction('response')">📝 Подготовить отзыв</button>
-            <button class="quick-btn" onclick="quickAction('motions')">⚖️ Ходатайства</button>
-            <button class="quick-btn" onclick="quickAction('dates')">📅 Найти сроки</button>
-            <button class="quick-btn" onclick="quickAction('risks')">⚠️ Риски по делу</button>
+            <button class="quick-btn" onclick="quickAction('summary')">📄 Кратко</button>
+            <button class="quick-btn" onclick="quickAction('deadlines')">📅 Сроки</button>
+            <button class="quick-btn" onclick="quickAction('risks')">⚠️ Риски</button>
+            <button class="quick-btn" onclick="quickAction('draft')">✍️ Черновик ответа</button>
           </div>
         </div>
 
         <input type="password" id="apiKey" placeholder="Google Gemini API Key" onchange="saveKey()" autocomplete="off" spellcheck="false" />
-        <div class="muted" style="font-size:11px;margin-top:-8px;margin-bottom:12px;">Ключ нужен для ИИ-аналитики и автоанализа документов.</div>
+        <div class="muted" style="font-size:11px;margin-top:-8px;margin-bottom:12px;">Ключ нужен для ИИ-аналитики и анализа документов.</div>
 
         <div class="ai-msgs" id="aiMsgs">
           <div class="msg ai">
-            <div class="bubble">Документ можно перетащить сюда или загрузить нажатием. После загрузки анализ запускается автоматически.</div>
+            <div class="bubble">Загрузите документ или опишите задачу. Для документов доступны 4 быстрых действия: кратко, сроки, риски и черновик ответа.</div>
           </div>
         </div>
 
@@ -949,15 +1063,16 @@
     </nav>
   </div>
 
-  <!-- ADD MODAL -->
-  <div class="modal-overlay" id="addModal" onclick="closeModalOnOverlay(event)">
+  <div class="modal-overlay" id="eventModal" onclick="closeModalOnOverlay(event, 'eventModal')">
     <div class="modal-content">
-      <h2>Новое поручение</h2>
+      <h2 id="eventModalTitle">Новое поручение</h2>
 
       <select id="evType" class="field">
         <option value="court">Судебный процесс</option>
         <option value="consult">Консультация</option>
         <option value="task">Задача</option>
+        <option value="call">Звонок</option>
+        <option value="meeting">Встреча</option>
       </select>
 
       <input type="text" id="evTitle" class="field" placeholder="Заголовок / клиент" maxlength="180" />
@@ -965,11 +1080,17 @@
       <input type="time" id="evTime" class="field" />
       <textarea id="evNotes" placeholder="Комментарий / суть поручения"></textarea>
 
-      <button class="btn" style="background:var(--accent);" onclick="saveEvent()">Добавить в календарь</button>
+      <button class="btn" id="saveEventBtn" style="background:var(--accent);" onclick="saveEvent()">Добавить в календарь</button>
     </div>
   </div>
 
-  <!-- ALARM -->
+  <div class="modal-overlay" id="detailModal" onclick="closeModalOnOverlay(event, 'detailModal')">
+    <div class="modal-content">
+      <h2>Запись</h2>
+      <div id="detailBody"></div>
+    </div>
+  </div>
+
   <div class="alarm-overlay" id="alarmOverlay">
     <div class="alarm-box">
       <div class="alarm-icon">🔔</div>
@@ -979,7 +1100,6 @@
     </div>
   </div>
 
-  <!-- TOASTS -->
   <div class="toasts" id="toasts"></div>
 
   <script type="module">
@@ -989,20 +1109,24 @@
   </script>
 
   <script>
-    const STORAGE_EVENTS_KEY = 'lexEventsFinal';
+    const STORAGE_EVENTS_KEY = 'lexEventsGithubFinalV2';
     const STORAGE_GEMINI_KEY = 'gemini_key';
     const STORAGE_LAST_BRIEF_KEY = 'lastBriefDate';
     const STORAGE_THEME_KEY = 'lex_theme';
 
-    const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const EVENT_TYPES = {
+      court: 'Суд',
+      consult: 'Консультация',
+      task: 'Задача',
+      call: 'Звонок',
+      meeting: 'Встреча'
+    };
 
-    const QUICK_PROMPTS = {
-      analyze: 'Сделай детальный правовой анализ документа. Определи тип документа, стороны, суть, риски, слабые и сильные места.',
-      strategy: 'Разработай стратегию защиты или наступления по документу. Дай пошаговый юридический план действий по праву РК.',
-      response: 'Подготовь проект отзыва, возражения или ответа по документу в профессиональном юридическом стиле.',
-      motions: 'Определи возможные ходатайства и процессуальные действия по документу. Укажи что целесообразно заявить.',
-      dates: 'Найди все важные даты, сроки, дедлайны и процессуальные моменты в документе.',
-      risks: 'Проанализируй все риски по документу и дай рекомендации, как их минимизировать.'
+    const DOC_ACTION_PROMPTS = {
+      summary: 'Сделай краткое юридическое резюме документа простым профессиональным языком. Без списков, но чётко по сути.',
+      deadlines: 'Найди все сроки, даты, дедлайны и процессуальные временные ориентиры в документе. Если сроки прямо не указаны, так и напиши.',
+      risks: 'Найди основные юридические риски, слабые места и уязвимые участки документа. Без списков, но чётко и профессионально.',
+      draft: 'Подготовь черновик ответа, возражения или рабочей позиции по документу в профессиональном юридическом стиле.'
     };
 
     let events = [];
@@ -1015,9 +1139,10 @@
     let aiLoading = false;
     let lastTranscript = '';
     let uploadedDocs = [];
-    let shownConflictKeys = new Set();
-    let activeAlarmId = null;
     let currentTheme = localStorage.getItem(STORAGE_THEME_KEY) || 'light';
+    let currentEditId = null;
+    let currentDetailId = null;
+    let quickMode = 'auto';
 
     window.addEventListener('load', initApp);
 
@@ -1026,8 +1151,11 @@
       events = loadEvents();
       document.getElementById('apiKey').value = localStorage.getItem(STORAGE_GEMINI_KEY) || '';
       document.getElementById('evDate').value = todayStr();
-      document.getElementById('aiInp').addEventListener('keydown', onAiKeydown);
 
+      document.getElementById('aiInp').addEventListener('keydown', onAiKeydown);
+      document.getElementById('homeSearch').addEventListener('input', renderHome);
+
+      renderQuickModeButtons();
       renderUploadedFiles();
       renderHome();
       renderCalendar();
@@ -1045,7 +1173,6 @@
       }
     }
 
-    /* Theme */
     function applyTheme(theme) {
       currentTheme = theme === 'dark' ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', currentTheme);
@@ -1054,10 +1181,68 @@
 
     function toggleTheme() {
       applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-      playThemeTick();
     }
 
-    /* Sound engine */
+    function setQuickMode(mode) {
+      quickMode = mode;
+      renderQuickModeButtons();
+    }
+
+    function renderQuickModeButtons() {
+      document.querySelectorAll('.mode-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === quickMode);
+      });
+    }
+
+    function normalizeType(t) {
+      return Object.keys(EVENT_TYPES).includes(t) ? t : 'task';
+    }
+
+    function normalizeTime(v) {
+      return typeof v === 'string' && /^\d{2}:\d{2}$/.test(v) ? v : '';
+    }
+
+    function todayStr(d = new Date()) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function timeToMinutes(t) {
+      const v = normalizeTime(t);
+      if (!v) return null;
+      const [h, m] = v.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function sortEvents(arr) {
+      return arr.sort((a, b) => (`${a.date} ${a.time || '99:99'} ${a.title}`).localeCompare(`${b.date} ${b.time || '99:99'} ${b.title}`));
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function emptyState(text) {
+      const el = document.createElement('div');
+      el.className = 'empty-state';
+      el.textContent = text;
+      return el;
+    }
+
+    function toast(type, msg) {
+      const wrap = document.getElementById('toasts');
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      const ic = type === 'ok' ? '✅' : type === 'warn' ? '⚠️' : '💡';
+      el.innerHTML = `<span>${ic}</span><span>${escapeHtml(msg)}</span>`;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
     function getAudioContext() {
       return new (window.AudioContext || window.webkitAudioContext)();
     }
@@ -1070,8 +1255,10 @@
           const g = ac.createGain();
           o.connect(g);
           g.connect(ac.destination);
+
           o.type = item.type || 'sine';
           o.frequency.value = item.freq;
+
           const t = ac.currentTime + (item.at || 0);
           const dur = item.dur || 0.25;
           const peak = item.gain || 0.2;
@@ -1110,44 +1297,6 @@
       ]);
     }
 
-    function playSaveConfirm() {
-      playTones([
-        { freq: 523, at: 0.00, dur: 0.24, gain: 0.18, type: 'sine' }
-      ]);
-    }
-
-    function playThemeTick() {
-      playTones([
-        { freq: 820, at: 0.00, dur: 0.08, gain: 0.12, type: 'square' }
-      ]);
-    }
-
-    function playErrorTone() {
-      playTones([
-        { freq: 420, at: 0.00, dur: 0.22, gain: 0.18, type: 'triangle' },
-        { freq: 260, at: 0.22, dur: 0.26, gain: 0.18, type: 'triangle' }
-      ]);
-    }
-
-    function playAiNotify() {
-      playTones([
-        { freq: 660, at: 0.00, dur: 0.18, gain: 0.14, type: 'sine' },
-        { freq: 820, at: 0.18, dur: 0.20, gain: 0.14, type: 'sine' }
-      ]);
-    }
-
-    /* Toasts */
-    function toast(type, msg) {
-      const wrap = document.getElementById('toasts');
-      const el = document.createElement('div');
-      el.className = 'toast ' + type;
-      const ic = type === 'ok' ? '✅' : type === 'warn' ? '⚠️' : '💡';
-      el.innerHTML = `<span>${ic}</span><span>${escapeHtml(msg)}</span>`;
-      wrap.appendChild(el);
-      setTimeout(() => el.remove(), 3500);
-    }
-
-    /* Storage */
     function loadEvents() {
       try {
         const raw = localStorage.getItem(STORAGE_EVENTS_KEY);
@@ -1163,9 +1312,8 @@
             date: String(e.date),
             time: normalizeTime(e.time),
             notes: String(e.notes || '').trim(),
-            _alerted30: Boolean(e._alerted30),
-            _alerted5: Boolean(e._alerted5),
-            _alertedNow: Boolean(e._alertedNow)
+            extraReminders: Array.isArray(e.extraReminders) ? e.extraReminders.filter(n => Number.isFinite(n)) : [],
+            alertedKeys: Array.isArray(e.alertedKeys) ? e.alertedKeys : []
           }));
       } catch {
         return [];
@@ -1176,54 +1324,84 @@
       localStorage.setItem(STORAGE_EVENTS_KEY, JSON.stringify(events));
     }
 
-    function normalizeType(t) {
-      return ['court','consult','task'].includes(t) ? t : 'task';
+    function matchesSearch(ev, query) {
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) return true;
+      const haystack = [
+        ev.title,
+        ev.notes,
+        ev.date,
+        ev.time,
+        EVENT_TYPES[ev.type] || ''
+      ].join(' ').toLowerCase();
+      return haystack.includes(q);
     }
 
-    function normalizeTime(v) {
-      return typeof v === 'string' && /^\d{2}:\d{2}$/.test(v) ? v : '';
+    function renderHome() {
+      renderConflicts('homeConflicts');
+
+      const q = document.getElementById('homeSearch').value.trim();
+      const list = document.getElementById('homeUpcomingList');
+      const title = document.getElementById('homeListTitle');
+      list.innerHTML = '';
+
+      if (q) {
+        title.textContent = 'Результаты поиска';
+        const matches = sortEvents([...events].filter(ev => matchesSearch(ev, q)));
+        if (!matches.length) {
+          list.appendChild(emptyState('Ничего не найдено.'));
+          return;
+        }
+        matches.forEach(ev => list.appendChild(makeEventCard(ev, false)));
+        return;
+      }
+
+      title.textContent = 'Ближайшие дела';
+      const today = todayStr();
+      const upcoming = sortEvents([...events].filter(ev => ev.date >= today)).slice(0, 8);
+
+      if (!upcoming.length) {
+        list.appendChild(emptyState('График на ближайшее время свободен.'));
+        return;
+      }
+
+      upcoming.forEach(ev => list.appendChild(makeEventCard(ev, false)));
     }
 
-    function todayStr(d = new Date()) {
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    function renderConflicts(containerId) {
+      const box = document.getElementById(containerId);
+      box.innerHTML = '';
+
+      const now = todayStr();
+      const upcoming = sortEvents([...events].filter(e => e.date >= now && normalizeTime(e.time)));
+      const seen = new Set();
+
+      for (let i = 0; i < upcoming.length; i++) {
+        for (let j = i + 1; j < upcoming.length; j++) {
+          if (upcoming[i].date !== upcoming[j].date) continue;
+
+          const a = timeToMinutes(upcoming[i].time);
+          const b = timeToMinutes(upcoming[j].time);
+          if (a === null || b === null) continue;
+
+          if (Math.abs(a - b) < 60) {
+            const key = [upcoming[i].id, upcoming[j].id].sort().join(':');
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            const d = document.createElement('div');
+            d.className = 'conflict-banner';
+            d.innerHTML = `<strong>⚠️ Конфликт времени:</strong> «${escapeHtml(upcoming[i].title)}» и «${escapeHtml(upcoming[j].title)}» пересекаются.`;
+            box.appendChild(d);
+          }
+        }
+      }
     }
 
-    function timeToMinutes(t) {
-      const v = normalizeTime(t);
-      if (!v) return null;
-      const [h, m] = v.split(':').map(Number);
-      return h * 60 + m;
-    }
-
-    function sortEvents(arr) {
-      return arr.sort((a, b) => (`${a.date} ${a.time || '99:99'} ${a.title}`).localeCompare(`${b.date} ${b.time || '99:99'} ${b.title}`));
-    }
-
-    /* Helpers */
-    function emptyState(text) {
-      const el = document.createElement('div');
-      el.className = 'empty-state';
-      el.textContent = text;
-      return el;
-    }
-
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-    }
-
-    function escapeRegExp(str) {
-      return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
-    /* Event cards */
-    function makeEventCard(ev, withDelete = false) {
+    function makeEventCard(ev, withDelete) {
       const w = document.createElement('div');
       w.className = `ev-item ${ev.type}`;
+      w.addEventListener('click', () => openDetailModal(ev.id));
 
       const m = document.createElement('div');
       m.className = 'ev-main';
@@ -1242,9 +1420,7 @@
 
       const tm = document.createElement('div');
       tm.className = 'ev-time';
-      tm.textContent = withDelete
-        ? (normalizeTime(ev.time) || '--:--')
-        : `${ev.date} | ${normalizeTime(ev.time) || '--:--'}`;
+      tm.textContent = `${EVENT_TYPES[ev.type] || 'Задача'} · ${ev.date}${ev.time ? ' | ' + ev.time : ''}`;
       m.appendChild(tm);
 
       w.appendChild(m);
@@ -1254,7 +1430,8 @@
         b.className = 'mini-btn';
         b.textContent = '×';
         b.setAttribute('aria-label', 'Удалить событие');
-        b.addEventListener('click', () => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
           deleteEvent(ev.id);
         });
         w.appendChild(b);
@@ -1263,58 +1440,6 @@
       return w;
     }
 
-    /* Home */
-    function renderHome() {
-      const now = todayStr();
-      const upcoming = sortEvents([...events].filter(e => e.date >= now)).slice(0, 5);
-      renderConflicts('homeConflicts');
-      const list = document.getElementById('homeUpcomingList');
-      list.innerHTML = '';
-      if (!upcoming.length) {
-        list.appendChild(emptyState('График на ближайшее время свободен.'));
-        return;
-      }
-      upcoming.forEach(e => list.appendChild(makeEventCard(e, false)));
-    }
-
-    function renderConflicts(containerId) {
-      const box = document.getElementById(containerId);
-      box.innerHTML = '';
-
-      const now = todayStr();
-      const upcoming = sortEvents([...events].filter(e => e.date >= now && normalizeTime(e.time)));
-      const localKeys = new Set();
-
-      for (let i = 0; i < upcoming.length; i++) {
-        for (let j = i + 1; j < upcoming.length; j++) {
-          if (upcoming[i].date !== upcoming[j].date) continue;
-
-          const a = timeToMinutes(upcoming[i].time);
-          const b = timeToMinutes(upcoming[j].time);
-          if (a === null || b === null) continue;
-
-          if (Math.abs(a - b) < 60) {
-            const key = [upcoming[i].id, upcoming[j].id].sort().join(':');
-            localKeys.add(key);
-
-            const d = document.createElement('div');
-            d.className = 'conflict-banner';
-            d.innerHTML = `<strong>⚠️ Конфликт времени:</strong> «${escapeHtml(upcoming[i].title)}» и «${escapeHtml(upcoming[j].title)}» пересекаются.`;
-            box.appendChild(d);
-
-            if (!shownConflictKeys.has(key)) {
-              shownConflictKeys.add(key);
-            }
-          }
-        }
-      }
-
-      shownConflictKeys.forEach(key => {
-        if (!localKeys.has(key)) shownConflictKeys.delete(key);
-      });
-    }
-
-    /* Calendar */
     function moveMonth(dir) {
       currDate = new Date(currDate.getFullYear(), currDate.getMonth() + dir, 1);
       renderCalendar();
@@ -1330,7 +1455,7 @@
 
       const y = currDate.getFullYear();
       const m = currDate.getMonth();
-      document.getElementById('calMonthYear').textContent = `${MONTHS[m]} ${y}`;
+      document.getElementById('calMonthYear').textContent = `${['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][m]} ${y}`;
 
       const grid = document.getElementById('calGrid');
       grid.innerHTML = '';
@@ -1349,7 +1474,7 @@
       }
 
       for (let d = 1; d <= daysInMonth; d++) {
-        const ds = `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const ds = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const dayEvents = events.filter(e => e.date === ds);
 
         let cls = 'cd';
@@ -1393,18 +1518,38 @@
       dayEvents.forEach(e => box.appendChild(makeEventCard(e, true)));
     }
 
-    /* Modal */
-    function openModal() {
-      document.getElementById('addModal').style.display = 'flex';
+    function openManualModal() {
+      currentEditId = null;
+      document.getElementById('eventModalTitle').textContent = 'Новое поручение';
+      document.getElementById('saveEventBtn').textContent = 'Добавить в календарь';
+      document.getElementById('evType').value = quickMode !== 'auto' ? quickMode : 'task';
+      document.getElementById('evTitle').value = '';
+      document.getElementById('evDate').value = selDateStr || todayStr();
+      document.getElementById('evTime').value = '';
+      document.getElementById('evNotes').value = '';
+      document.getElementById('eventModal').style.display = 'flex';
       document.getElementById('evTitle').focus();
     }
 
-    function closeModal() {
-      document.getElementById('addModal').style.display = 'none';
+    function openEditModal(id) {
+      const ev = events.find(e => e.id === id);
+      if (!ev) return;
+
+      currentEditId = id;
+      document.getElementById('eventModalTitle').textContent = 'Редактировать';
+      document.getElementById('saveEventBtn').textContent = 'Сохранить изменения';
+      document.getElementById('evType').value = ev.type;
+      document.getElementById('evTitle').value = ev.title;
+      document.getElementById('evDate').value = ev.date;
+      document.getElementById('evTime').value = ev.time || '';
+      document.getElementById('evNotes').value = ev.notes || '';
+      document.getElementById('eventModal').style.display = 'flex';
     }
 
-    function closeModalOnOverlay(e) {
-      if (e.target.id === 'addModal') closeModal();
+    function closeModalOnOverlay(e, id) {
+      if (e.target.id === id) {
+        document.getElementById(id).style.display = 'none';
+      }
     }
 
     function saveEvent() {
@@ -1415,8 +1560,26 @@
       const notes = document.getElementById('evNotes').value.trim();
 
       if (!title || !date) {
-        playErrorTone();
         toast('warn', 'Введите заголовок и дату');
+        return;
+      }
+
+      if (currentEditId !== null) {
+        const ev = events.find(e => e.id === currentEditId);
+        if (!ev) return;
+
+        ev.type = type;
+        ev.title = title;
+        ev.date = date;
+        ev.time = time;
+        ev.notes = notes;
+
+        saveEvents();
+        document.getElementById('eventModal').style.display = 'none';
+        renderHome();
+        renderCalendar();
+        renderDayEvents();
+        toast('ok', 'Изменения сохранены');
         return;
       }
 
@@ -1429,7 +1592,6 @@
       );
 
       if (dup) {
-        playErrorTone();
         toast('warn', 'Такая запись уже есть');
         return;
       }
@@ -1452,9 +1614,8 @@
         date,
         time,
         notes,
-        _alerted30: false,
-        _alerted5: false,
-        _alertedNow: false
+        extraReminders: [],
+        alertedKeys: []
       });
 
       sortEvents(events);
@@ -1464,32 +1625,95 @@
       currDate = new Date(date + 'T00:00:00');
       currDate = new Date(currDate.getFullYear(), currDate.getMonth(), 1);
 
-      closeModal();
-
-      document.getElementById('evType').value = 'court';
-      document.getElementById('evTitle').value = '';
-      document.getElementById('evDate').value = todayStr();
-      document.getElementById('evTime').value = '';
-      document.getElementById('evNotes').value = '';
-
+      document.getElementById('eventModal').style.display = 'none';
       renderHome();
       renderCalendar();
       renderDayEvents();
 
-      playSaveConfirm();
       toast('ok', 'Запись сохранена');
     }
 
     function deleteEvent(id) {
       events = events.filter(e => e.id !== id);
       saveEvents();
+
+      if (currentDetailId === id) {
+        document.getElementById('detailModal').style.display = 'none';
+      }
+
       renderHome();
       renderCalendar();
       renderDayEvents();
-      playAiNotify();
+      toast('ok', 'Запись удалена');
     }
 
-    /* Brief */
+    function openDetailModal(id) {
+      const ev = events.find(e => e.id === id);
+      if (!ev) return;
+
+      currentDetailId = id;
+
+      const body = document.getElementById('detailBody');
+      body.innerHTML = `
+        <div class="detail-head">
+          <div class="detail-type">${escapeHtml(EVENT_TYPES[ev.type] || 'Задача')}</div>
+          <div class="detail-title">${escapeHtml(ev.title)}</div>
+          <div class="detail-meta">${escapeHtml(ev.date)}${ev.time ? ' | ' + escapeHtml(ev.time) : ''}</div>
+        </div>
+        ${ev.notes ? `<div class="detail-note">${escapeHtml(ev.notes)}</div>` : ''}
+        <div class="section-label">Действия по записи</div>
+        <div class="detail-grid">
+          <button class="detail-btn primary" onclick="runEventAiAction('position')">Подготовить позицию</button>
+          <button class="detail-btn primary" onclick="runEventAiAction('arguments')">Сделать аргументы</button>
+          <button class="detail-btn primary" onclick="runEventAiAction('client')">Сообщение клиенту</button>
+          <button class="detail-btn primary" onclick="runEventAiAction('plan')">План подготовки</button>
+        </div>
+        <div class="section-label">Дополнительные напоминания</div>
+        <div class="detail-grid">
+          <button class="detail-btn" onclick="addReminderToCurrent(60)">Добавить за 1 час</button>
+          <button class="detail-btn" onclick="addReminderToCurrent(1440)">Добавить за 1 день</button>
+        </div>
+        <div class="section-label">Управление</div>
+        <div class="detail-grid">
+          <button class="detail-btn" onclick="editCurrentEvent()">Редактировать</button>
+          <button class="detail-btn danger" onclick="deleteCurrentEvent()">Удалить</button>
+        </div>
+      `;
+
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function editCurrentEvent() {
+      const id = currentDetailId;
+      document.getElementById('detailModal').style.display = 'none';
+      openEditModal(id);
+    }
+
+    function deleteCurrentEvent() {
+      if (currentDetailId === null) return;
+      const id = currentDetailId;
+      document.getElementById('detailModal').style.display = 'none';
+      deleteEvent(id);
+    }
+
+    function addReminderToCurrent(minutes) {
+      if (currentDetailId === null) return;
+      const ev = events.find(e => e.id === currentDetailId);
+      if (!ev) return;
+      if (!ev.time) {
+        toast('warn', 'У события нет времени');
+        return;
+      }
+      if (ev.extraReminders.includes(minutes)) {
+        toast('info', 'Такое напоминание уже есть');
+        return;
+      }
+      ev.extraReminders.push(minutes);
+      ev.alertedKeys = ev.alertedKeys.filter(key => key !== String(minutes));
+      saveEvents();
+      toast('ok', minutes === 60 ? 'Добавлено напоминание за 1 час' : 'Добавлено напоминание за 1 день');
+    }
+
     function closeBrief() {
       document.getElementById('dailyBriefBox').style.display = 'none';
     }
@@ -1534,37 +1758,51 @@
       }
     }
 
-    /* Alarms */
+    function formatLeadText(lead) {
+      if (lead === 0) return 'Сейчас';
+      if (lead === 5) return 'Через 5 минут';
+      if (lead === 30) return 'Через 30 минут';
+      if (lead === 60) return 'Через 1 час';
+      if (lead === 1440) return 'Через 1 день';
+      return `Через ${lead} мин`;
+    }
+
+    function shouldFireLead(diffMinutes, lead) {
+      if (lead === 0) {
+        return diffMinutes <= 0 && diffMinutes > -2;
+      }
+      return diffMinutes <= lead && diffMinutes > lead - 1.2;
+    }
+
     function checkAlarms() {
       const now = new Date();
+      let changed = false;
 
       events.forEach(ev => {
         if (!ev.time) return;
 
         const evDt = new Date(ev.date + 'T' + ev.time + ':00');
         const diff = (evDt - now) / 60000;
+        const leads = Array.from(new Set([30, 5, 0, ...(ev.extraReminders || [])]));
 
-        if (diff > 0 && diff <= 30 && !ev._alerted30) {
-          ev._alerted30 = true;
-          saveEvents();
-          playAlarm30();
-          showAlarm('Через 30 минут', `${ev.title}\n${ev.date} в ${ev.time}`);
-        }
+        leads.forEach(lead => {
+          const key = String(lead);
+          if ((ev.alertedKeys || []).includes(key)) return;
+          if (!shouldFireLead(diff, lead)) return;
 
-        if (diff > 0 && diff <= 5 && !ev._alerted5) {
-          ev._alerted5 = true;
-          saveEvents();
-          playAlarm5();
-          showAlarm('Через 5 минут', `${ev.title}\n${ev.date} в ${ev.time}`);
-        }
+          ev.alertedKeys.push(key);
+          changed = true;
 
-        if (diff <= 0 && diff > -2 && !ev._alertedNow) {
-          ev._alertedNow = true;
-          saveEvents();
-          playAlarmNow();
-          showAlarm('Сейчас', `${ev.title}\n${ev.time || '--:--'}`);
-        }
+          if (lead === 30) playAlarm30();
+          else if (lead === 5) playAlarm5();
+          else if (lead === 0) playAlarmNow();
+          else playAlarm30();
+
+          showAlarm(formatLeadText(lead), `${ev.title}\n${ev.date}${ev.time ? ' в ' + ev.time : ''}`);
+        });
       });
+
+      if (changed) saveEvents();
     }
 
     function showAlarm(title, text) {
@@ -1575,10 +1813,8 @@
 
     function dismissAlarm() {
       document.getElementById('alarmOverlay').style.display = 'none';
-      activeAlarmId = null;
     }
 
-    /* Microphone */
     function toggleMic() {
       if (!micOn) {
         if (!startMic()) return;
@@ -1600,7 +1836,6 @@
     function startMic() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        playErrorTone();
         toast('warn', 'Голосовой ввод не поддерживается');
         return false;
       }
@@ -1608,7 +1843,6 @@
       try {
         recognition = new SR();
       } catch {
-        playErrorTone();
         toast('warn', 'Не удалось запустить микрофон');
         return false;
       }
@@ -1634,14 +1868,12 @@
       recognition.onerror = () => {
         stopMic();
         resetMicUi();
-        playErrorTone();
       };
 
       recognition.onend = () => {
         const text = (lastTranscript || '').trim();
         stopMic();
         resetMicUi();
-
         if (text) autoSaveVoice(text);
       };
 
@@ -1671,9 +1903,13 @@
     }
 
     function inferVoiceType(text) {
+      if (quickMode !== 'auto') return quickMode;
+
       const s = String(text).toLowerCase();
       if (/суд|процесс|заседан/.test(s)) return 'court';
       if (/консультац/.test(s)) return 'consult';
+      if (/звонок|созвон/.test(s)) return 'call';
+      if (/встреча|переговор/.test(s)) return 'meeting';
       return 'task';
     }
 
@@ -1700,9 +1936,8 @@
         date: parsed.date,
         time: parsed.time,
         notes: '',
-        _alerted30: false,
-        _alerted5: false,
-        _alertedNow: false
+        extraReminders: [],
+        alertedKeys: []
       });
 
       sortEvents(events);
@@ -1716,7 +1951,6 @@
       renderCalendar();
       renderDayEvents();
 
-      playSaveConfirm();
       toast('ok', 'Голосовая запись сохранена');
     }
 
@@ -1736,13 +1970,21 @@
       return d;
     }
 
-    function getNextWeekday(baseDate, targetDay, forceNextWeek = false) {
+    function getWeekdayDate(baseDate, targetDay, foundTime, includeToday) {
       const currentDay = baseDate.getDay();
       let diff = targetDay - currentDay;
 
       if (diff < 0) diff += 7;
-      if (diff === 0) diff = 7;
-      if (forceNextWeek) diff += 7;
+
+      if (diff === 0) {
+        if (!includeToday) {
+          diff = 7;
+        } else if (foundTime) {
+          const nowMinutes = baseDate.getHours() * 60 + baseDate.getMinutes();
+          const eventMinutes = timeToMinutes(foundTime);
+          if (eventMinutes !== null && eventMinutes <= nowMinutes) diff = 7;
+        }
+      }
 
       const result = new Date(baseDate);
       result.setDate(result.getDate() + diff);
@@ -1803,11 +2045,11 @@
         }
       }
 
-      const verbalWithYear = text.match(/\b(\d{1,2})(?:-?(?:й|я|е|го))?\s+(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)(?:\s+(\d{2,4}))?(?:\s*(?:года|год|г))?\b/i);
-      if (verbalWithYear) {
-        const dd = Number(verbalWithYear[1]);
-        const mm = months[verbalWithYear[2].toLowerCase()];
-        let yy = verbalWithYear[3] ? Number(verbalWithYear[3]) : now.getFullYear();
+      const verbalDate = text.match(/\b(\d{1,2})(?:-?(?:й|я|е|го))?\s+(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)(?:\s+(\d{2,4}))?(?:\s*(?:года|год|г))?\b/i);
+      if (verbalDate) {
+        const dd = Number(verbalDate[1]);
+        const mm = months[verbalDate[2].toLowerCase()];
+        let yy = verbalDate[3] ? Number(verbalDate[3]) : now.getFullYear();
         if (yy < 100) yy += 2000;
 
         const d = new Date(yy, mm, dd);
@@ -1850,7 +2092,7 @@
       if (nextWeekday) {
         const wd = weekdays[nextWeekday[1].toLowerCase()];
         if (typeof wd === 'number') {
-          const d = getNextWeekday(now, wd, true);
+          const d = getWeekdayDate(now, wd, foundTime, false);
           return { date: todayStr(d), time: foundTime };
         }
       }
@@ -1859,7 +2101,7 @@
       if (weekday) {
         const wd = weekdays[weekday[1].toLowerCase()];
         if (typeof wd === 'number') {
-          const d = getNextWeekday(now, wd, false);
+          const d = getWeekdayDate(now, wd, foundTime, true);
           return { date: todayStr(d), time: foundTime };
         }
       }
@@ -1867,7 +2109,6 @@
       return { date: foundDate, time: foundTime };
     }
 
-    /* AI */
     function saveKey() {
       const value = document.getElementById('apiKey').value.trim();
       if (value) localStorage.setItem(STORAGE_GEMINI_KEY, value);
@@ -1887,16 +2128,23 @@
     }
 
     async function sendAiMsg() {
+      const text = document.getElementById('aiInp').value.trim();
+      if (!text) {
+        toast('warn', 'Введите запрос');
+        return;
+      }
+      await sendAiPrompt(text);
+      document.getElementById('aiInp').value = '';
+    }
+
+    async function sendAiPrompt(text) {
       if (aiLoading) return;
 
       const key = localStorage.getItem(STORAGE_GEMINI_KEY);
-      const inp = document.getElementById('aiInp');
       const btn = document.getElementById('aiSendBtn');
-      const text = inp.value.trim();
 
-      if (!text || !key) {
-        playErrorTone();
-        toast('warn', 'Требуется ключ API и запрос');
+      if (!key) {
+        toast('warn', 'Введите Gemini API Key');
         return;
       }
 
@@ -1905,30 +2153,20 @@
       btn.textContent = 'Анализ...';
 
       addMsg('user', text);
-      inp.value = '';
 
       const docsContext = uploadedDocs.length
         ? '\n\nДОКУМЕНТЫ:\n' + uploadedDocs.map(d => `=== ${d.name} ===\n${d.text}`).join('\n\n')
         : '';
 
-      const calendarContext = events
-        .filter(e => new Date(e.date) >= new Date(new Date().toDateString()))
-        .slice(0, 8)
-        .map(e => `- ${e.type}: ${e.title} / ${e.date} ${e.time || '--:--'}`)
-        .join('\n');
-
       try {
-        const r = await askGemini(
+        const response = await askGemini(
           key,
-          'Ты профессиональный юридический ИИ-помощник. Анализируй по праву РК. Пиши только сплошным сильным текстом без списков.',
-          text + (calendarContext ? '\n\nПредстоящие дела:\n' + calendarContext : '') + docsContext
+          'Ты профессиональный юридический ИИ-помощник. Анализируй по праву РК. Пиши сильным профессиональным текстом без списков, если пользователь не просит иное.',
+          text + docsContext
         );
-
-        addMsg('ai', r);
-        playAiNotify();
+        addMsg('ai', response);
       } catch (err) {
         addMsg('ai', 'Сбой системы. Проверьте API-ключ, соединение или лимиты.');
-        playErrorTone();
       } finally {
         aiLoading = false;
         btn.disabled = false;
@@ -1956,7 +2194,25 @@
       return text;
     }
 
-    /* File upload */
+    async function runEventAiAction(action) {
+      const ev = events.find(e => e.id === currentDetailId);
+      if (!ev) return;
+
+      const prompts = {
+        position: 'Подготовь рабочую правовую позицию по этому событию.',
+        arguments: 'Сформируй ключевые аргументы и контраргументы по этому событию.',
+        client: 'Сделай короткое профессиональное сообщение клиенту по этому событию.',
+        plan: 'Составь короткий план подготовки по этому событию.'
+      };
+
+      const prompt = `${prompts[action]}\n\nТип: ${EVENT_TYPES[ev.type] || 'Задача'}\nНазвание: ${ev.title}\nДата: ${ev.date}\nВремя: ${ev.time || '--:--'}\nКомментарий: ${ev.notes || 'нет'}`;
+
+      document.getElementById('detailModal').style.display = 'none';
+      const aiTab = document.querySelectorAll('.nav-item')[2];
+      switchNav('ai', aiTab);
+      await sendAiPrompt(prompt);
+    }
+
     async function handleFileDrop(e) {
       e.preventDefault();
       document.getElementById('uploadZone').classList.remove('drag');
@@ -1970,49 +2226,15 @@
       e.target.value = '';
     }
 
-    async function loadFile(file) {
-      try {
-        toast('info', 'Загружаю файл: ' + file.name);
-
-        const text = await extractTextFromFile(file);
-        const doc = {
-          id: Date.now() + Math.floor(Math.random() * 1000),
-          name: file.name,
-          text: String(text || '').trim().slice(0, 25000)
-        };
-
-        if (!doc.text) {
-          playErrorTone();
-          toast('warn', 'Не удалось извлечь текст из документа');
-          return;
+    async function waitForPdfLib(timeout = 5000) {
+      const start = Date.now();
+      while (!window.pdfjsLib) {
+        if (Date.now() - start > timeout) {
+          throw new Error('PDF engine not ready');
         }
-
-        uploadedDocs.push(doc);
-        renderUploadedFiles();
-
-        playAiNotify();
-        toast('ok', 'Документ загружен');
-
-        const key = localStorage.getItem(STORAGE_GEMINI_KEY);
-        if (!key) {
-          toast('warn', 'Для автоанализа введите Gemini API Key');
-          return;
-        }
-
-        addMsg('ai', `Файл «${file.name}» загружен. Анализирую документ...`);
-
-        const result = await askGemini(
-          key,
-          'Ты профессиональный юридический ИИ-помощник по праву РК. Проанализируй документ. Пиши сплошным текстом без списков, но насыщенно по сути.',
-          `Изучи документ:\n\n${doc.text}\n\nДай правовой анализ, суть, стороны, даты, риски, что делать сразу и какие действия наиболее приоритетны.`
-        );
-
-        addMsg('ai', result);
-        playAiNotify();
-      } catch (err) {
-        playErrorTone();
-        addMsg('ai', 'Не удалось обработать документ.');
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
+      return window.pdfjsLib;
     }
 
     async function extractTextFromFile(file) {
@@ -2029,8 +2251,9 @@
       }
 
       if (name.endsWith('.pdf')) {
+        const pdfjsLib = await waitForPdfLib();
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let fullText = '';
 
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -2044,6 +2267,41 @@
       }
 
       throw new Error('Неподдерживаемый формат');
+    }
+
+    async function loadFile(file) {
+      try {
+        toast('info', 'Загружаю файл: ' + file.name);
+
+        const text = await extractTextFromFile(file);
+        const doc = {
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          name: file.name,
+          text: String(text || '').trim().slice(0, 25000)
+        };
+
+        if (!doc.text) {
+          toast('warn', 'Не удалось извлечь текст из документа');
+          return;
+        }
+
+        uploadedDocs.push(doc);
+        renderUploadedFiles();
+        toast('ok', 'Документ загружен');
+
+        const key = localStorage.getItem(STORAGE_GEMINI_KEY);
+        if (!key) return;
+
+        addMsg('ai', `Файл «${file.name}» загружен. Делаю первичный анализ...`);
+        const result = await askGemini(
+          key,
+          'Ты профессиональный юридический ИИ-помощник по праву РК. Дай краткое первичное резюме документа без списков.',
+          `Изучи документ:\n\n${doc.text}\n\nСделай краткое первичное юридическое резюме.`
+        );
+        addMsg('ai', result);
+      } catch (err) {
+        addMsg('ai', 'Не удалось обработать документ.');
+      }
     }
 
     function renderUploadedFiles() {
@@ -2068,51 +2326,28 @@
     function removeDoc(index) {
       uploadedDocs.splice(index, 1);
       renderUploadedFiles();
-      playThemeTick();
     }
 
     async function quickAction(type) {
       if (!uploadedDocs.length) {
-        playErrorTone();
         toast('warn', 'Сначала загрузите документ');
         return;
       }
 
-      const key = localStorage.getItem(STORAGE_GEMINI_KEY);
-      if (!key) {
-        playErrorTone();
-        toast('warn', 'Введите Gemini API Key');
-        return;
-      }
+      const prompt = DOC_ACTION_PROMPTS[type];
+      if (!prompt) return;
 
-      const prompt = QUICK_PROMPTS[type];
-      addMsg('user', prompt);
-
-      try {
-        const docsText = uploadedDocs.map(d => `=== ${d.name} ===\n${d.text}`).join('\n\n');
-        const result = await askGemini(
-          key,
-          'Ты профессиональный юридический ИИ-помощник. Анализируй документы по праву РК. Пиши сильно и по существу, сплошным текстом.',
-          prompt + '\n\nДОКУМЕНТЫ:\n' + docsText
-        );
-
-        addMsg('ai', result);
-        playAiNotify();
-      } catch (err) {
-        addMsg('ai', 'Ошибка выполнения действия.');
-        playErrorTone();
-      }
+      const aiTab = document.querySelectorAll('.nav-item')[2];
+      switchNav('ai', aiTab);
+      await sendAiPrompt(prompt);
     }
 
-    /* Navigation */
     function switchNav(id, btn) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
 
       document.getElementById('p-' + id).classList.add('active');
       btn.classList.add('active');
-
-      playThemeTick();
 
       if (id === 'home') renderHome();
       if (id === 'cal') {
