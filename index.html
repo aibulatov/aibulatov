@@ -1356,13 +1356,32 @@
         .trim();
     }
 
+    function getDateAfterDays(baseDate, daysToAdd) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + daysToAdd);
+      return d;
+    }
+
+    function getNextWeekday(baseDate, targetDay, forceNextWeek = false) {
+      const currentDay = baseDate.getDay(); // 0=ВС, 1=ПН...
+      let diff = targetDay - currentDay;
+
+      if (diff < 0) diff += 7;
+      if (diff === 0) diff = 7;
+
+      if (forceNextWeek) {
+        diff += 7;
+      }
+
+      const result = new Date(baseDate);
+      result.setDate(result.getDate() + diff);
+      return result;
+    }
+
     function parseVoiceDateTime(rawText) {
       const originalText = normalizeVoiceText(rawText);
       const text = originalText.toLowerCase();
       const now = new Date();
-
-      let foundTime = '';
-      let foundDate = getLocalDateStr(now);
 
       const months = {
         'января': 0, 'январь': 0,
@@ -1379,16 +1398,32 @@
         'декабря': 11, 'декабрь': 11
       };
 
-      const timeMatch = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
+      const weekdays = {
+        'понедельник': 1, 'понедельника': 1, 'понедельникe': 1,
+        'вторник': 2, 'вторника': 2,
+        'среду': 3, 'среда': 3, 'среды': 3,
+        'четверг': 4, 'четверга': 4,
+        'пятницу': 5, 'пятница': 5, 'пятницы': 5,
+        'субботу': 6, 'суббота': 6, 'субботы': 6,
+        'воскресенье': 0, 'воскресенья': 0
+      };
+
+      let foundDate = getLocalDateStr(now);
+      let foundTime = '';
+
+      const timeMatch =
+        text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/) ||
+        text.match(/\b([01]?\d|2[0-3])\s+([0-5]\d)\b/);
+
       if (timeMatch) {
-        foundTime = `${String(timeMatch[1]).padStart(2, '0')}:${timeMatch[2]}`;
+        foundTime = `${String(timeMatch[1]).padStart(2, '0')}:${String(timeMatch[2]).padStart(2, '0')}`;
       }
 
-      const fullDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/);
-      if (fullDateMatch) {
-        let dd = Number(fullDateMatch[1]);
-        let mm = Number(fullDateMatch[2]) - 1;
-        let yy = Number(fullDateMatch[3]);
+      const fullNumericDate = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/);
+      if (fullNumericDate) {
+        let dd = Number(fullNumericDate[1]);
+        let mm = Number(fullNumericDate[2]) - 1;
+        let yy = Number(fullNumericDate[3]);
         if (yy < 100) yy += 2000;
 
         const parsed = new Date(yy, mm, dd);
@@ -1400,7 +1435,6 @@
         }
       }
 
-      const monthNamePattern = /(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)/i;
       const verbalDateRegex = new RegExp(
         String.raw`\b(\d{1,2})(?:-?(?:й|я|е|го))?\s+` +
         String.raw`(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)` +
@@ -1414,7 +1448,6 @@
         const dd = Number(verbalDateMatch[1]);
         const mm = months[verbalDateMatch[2].toLowerCase()];
         let yy = verbalDateMatch[3] ? Number(verbalDateMatch[3]) : now.getFullYear();
-
         if (yy < 100) yy += 2000;
 
         const parsed = new Date(yy, mm, dd);
@@ -1446,6 +1479,7 @@
         String.raw`(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)\b`,
         'i'
       );
+
       const dayMonthOnlyMatch = text.match(dayMonthOnlyRegex);
       if (dayMonthOnlyMatch) {
         const dd = Number(dayMonthOnlyMatch[1]);
@@ -1461,12 +1495,63 @@
         }
       }
 
+      const afterDaysMatch = text.match(/\bчерез\s+(\d+)\s+(день|дня|дней)\b/i);
+      if (afterDaysMatch) {
+        const days = Number(afterDaysMatch[1]);
+        const parsed = getDateAfterDays(now, days);
+        return {
+          date: getLocalDateStr(parsed),
+          time: foundTime
+        };
+      }
+
+      if (/\bпослезавтра\b/i.test(text)) {
+        const parsed = getDateAfterDays(now, 2);
+        return {
+          date: getLocalDateStr(parsed),
+          time: foundTime
+        };
+      }
+
       if (/\bзавтра\b/i.test(text)) {
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        foundDate = getLocalDateStr(tomorrow);
-      } else if (/\bсегодня\b/i.test(text)) {
-        foundDate = getLocalDateStr(now);
+        const parsed = getDateAfterDays(now, 1);
+        return {
+          date: getLocalDateStr(parsed),
+          time: foundTime
+        };
+      }
+
+      if (/\bсегодня\b/i.test(text)) {
+        return {
+          date: getLocalDateStr(now),
+          time: foundTime
+        };
+      }
+
+      const nextWeekdayMatch = text.match(/\bв\s+следующ(?:ий|ую|ем)\s+(понедельник|вторник|среду|четверг|пятницу|субботу|воскресенье)\b/i);
+      if (nextWeekdayMatch) {
+        const weekdayWord = nextWeekdayMatch[1].toLowerCase();
+        const targetDay = weekdays[weekdayWord];
+        if (typeof targetDay === 'number') {
+          const parsed = getNextWeekday(now, targetDay, true);
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
+      }
+
+      const weekdayMatch = text.match(/\b(?:в|во)\s+(понедельник|понедельника|вторник|вторника|среду|среда|среды|четверг|четверга|пятницу|пятница|пятницы|субботу|суббота|субботы|воскресенье|воскресенья)\b/i);
+      if (weekdayMatch) {
+        const weekdayWord = weekdayMatch[1].toLowerCase();
+        const targetDay = weekdays[weekdayWord];
+        if (typeof targetDay === 'number') {
+          const parsed = getNextWeekday(now, targetDay, false);
+          return {
+            date: getLocalDateStr(parsed),
+            time: foundTime
+          };
+        }
       }
 
       return {
