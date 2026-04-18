@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>aibulatov.ai | Персональный Ассистент</title>
-  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #F8F7F4;
@@ -542,6 +542,15 @@
       white-space: nowrap;
       border: 0;
     }
+
+    @media (max-width: 390px) {
+      .logo-text {
+        font-size: 28px;
+      }
+      .action-btn {
+        min-height: 136px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -575,7 +584,9 @@
         <div id="voiceResult" style="display:none; margin-bottom:25px;">
           <label for="voiceText" class="sr-only">Результат диктовки</label>
           <textarea id="voiceText" rows="6" placeholder="Здесь появится текст диктовки..."></textarea>
-          <button class="btn" style="background: var(--accent)" onclick="copyVoice()">Скопировать в буфер</button>
+          <div class="muted" style="font-size:12px; margin-top:-6px;">
+            После остановки микрофона запись сохраняется автоматически.
+          </div>
         </div>
 
         <div id="homeConflicts"></div>
@@ -688,6 +699,7 @@
     let currDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     let selDateStr = null;
     let aiLoading = false;
+    let lastVoiceTranscript = '';
 
     window.addEventListener('load', initApp);
 
@@ -998,7 +1010,7 @@
       );
 
       if (duplicate) {
-        alert('Такое событие уже есть в графике');
+        alert('Такая запись уже есть в графике');
         return;
       }
 
@@ -1027,10 +1039,13 @@
 
       events.sort(compareEventDateTime);
       saveEvents();
+      selDateStr = date;
       closeModal();
       clearEventForm();
       renderHome();
       renderCalendar();
+      renderDayEvents();
+      alert('Запись сохранена');
     }
 
     function delEvent(id) {
@@ -1038,6 +1053,7 @@
       saveEvents();
       renderHome();
       renderCalendar();
+      renderDayEvents();
     }
 
     function closeBrief() {
@@ -1112,8 +1128,7 @@
     }
 
     async function askGemini(key, systemText, userText) {
-      // ИСПРАВЛЕНИЕ: Вызов самой современной и производительной версии API
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro:generateContent?key=${encodeURIComponent(key)}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${encodeURIComponent(key)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1241,6 +1256,8 @@
         return false;
       }
 
+      lastVoiceTranscript = '';
+
       recognition.lang = 'ru-RU';
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -1249,8 +1266,11 @@
         let transcript = '';
 
         for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+          transcript += event.results[i][0].transcript + ' ';
         }
+
+        transcript = transcript.trim();
+        lastVoiceTranscript = transcript;
 
         document.getElementById('voiceText').value = transcript;
         document.getElementById('voiceResult').style.display = 'block';
@@ -1262,9 +1282,13 @@
       };
 
       recognition.onend = () => {
-        if (micOn) {
-          stopMic();
-          resetMicUi();
+        const recognizedText = (lastVoiceTranscript || '').trim();
+
+        stopMic();
+        resetMicUi();
+
+        if (recognizedText) {
+          autoSaveVoiceTask(recognizedText);
         }
       };
 
@@ -1293,29 +1317,139 @@
       }
     }
 
-    async function copyVoice() {
-      const text = document.getElementById('voiceText').value.trim();
+    function parseVoiceDateTime(rawText) {
+      const text = String(rawText || '').trim();
+      const now = new Date();
 
-      if (!text) {
-        alert('Нет текста для копирования');
+      let foundTime = '';
+      let foundDate = getLocalDateStr(now);
+
+      const months = {
+        'января': 0, 'январь': 0,
+        'февраля': 1, 'февраль': 1,
+        'марта': 2, 'март': 2,
+        'апреля': 3, 'апрель': 3,
+        'мая': 4, 'май': 4,
+        'июня': 5, 'июнь': 5,
+        'июля': 6, 'июль': 6,
+        'августа': 7, 'август': 7,
+        'сентября': 8, 'сентябрь': 8,
+        'октября': 9, 'октябрь': 9,
+        'ноября': 10, 'ноябрь': 10,
+        'декабря': 11, 'декабрь': 11
+      };
+
+      const timeMatch = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
+      if (timeMatch) {
+        foundTime = `${String(timeMatch[1]).padStart(2, '0')}:${timeMatch[2]}`;
+      }
+
+      if (/\bсегодня\b/i.test(text)) {
+        foundDate = getLocalDateStr(now);
+      } else if (/\bзавтра\b/i.test(text)) {
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        foundDate = getLocalDateStr(tomorrow);
+      } else {
+        const fullDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})\b/);
+        if (fullDateMatch) {
+          let dd = Number(fullDateMatch[1]);
+          let mm = Number(fullDateMatch[2]) - 1;
+          let yy = Number(fullDateMatch[3]);
+
+          if (yy < 100) yy += 2000;
+
+          const parsed = new Date(yy, mm, dd);
+          if (!Number.isNaN(parsed.getTime())) {
+            foundDate = getLocalDateStr(parsed);
+          }
+        } else {
+          const shortDateMatch = text.match(/\b(\d{1,2})[.\-/](\d{1,2})\b/);
+          if (shortDateMatch) {
+            let dd = Number(shortDateMatch[1]);
+            let mm = Number(shortDateMatch[2]) - 1;
+            let yy = now.getFullYear();
+
+            const parsed = new Date(yy, mm, dd);
+            if (!Number.isNaN(parsed.getTime())) {
+              foundDate = getLocalDateStr(parsed);
+            }
+          } else {
+            const monthDateMatch = text.match(/\b(\d{1,2})\s+(января|январь|февраля|февраль|марта|март|апреля|апрель|мая|май|июня|июнь|июля|июль|августа|август|сентября|сентябрь|октября|октябрь|ноября|ноябрь|декабря|декабрь)\b/i);
+            if (monthDateMatch) {
+              const dd = Number(monthDateMatch[1]);
+              const mm = months[monthDateMatch[2].toLowerCase()];
+              const yy = now.getFullYear();
+
+              const parsed = new Date(yy, mm, dd);
+              if (!Number.isNaN(parsed.getTime())) {
+                foundDate = getLocalDateStr(parsed);
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        date: foundDate,
+        time: foundTime
+      };
+    }
+
+    function inferVoiceType(text) {
+      const t = String(text || '').toLowerCase();
+
+      if (t.includes('суд') || t.includes('процесс') || t.includes('заседан')) {
+        return 'court';
+      }
+
+      if (t.includes('консультац')) {
+        return 'consult';
+      }
+
+      return 'task';
+    }
+
+    function autoSaveVoiceTask(text) {
+      const cleanText = String(text || '').trim();
+
+      if (!cleanText) return;
+
+      const parsed = parseVoiceDateTime(cleanText);
+      const type = inferVoiceType(cleanText);
+
+      const duplicate = events.some(event =>
+        event.title === cleanText &&
+        event.date === parsed.date &&
+        (event.time || '') === (parsed.time || '') &&
+        event.type === type
+      );
+
+      document.getElementById('voiceText').value = cleanText;
+      document.getElementById('voiceResult').style.display = 'block';
+
+      if (duplicate) {
         return;
       }
 
-      try {
-        await navigator.clipboard.writeText(text);
-        alert('Текст сохранен');
-      } catch {
-        const area = document.getElementById('voiceText');
-        area.focus();
-        area.select();
+      events.push({
+        id: Date.now(),
+        type,
+        title: cleanText,
+        date: parsed.date,
+        time: parsed.time
+      });
 
-        try {
-          document.execCommand('copy');
-          alert('Текст сохранен');
-        } catch {
-          alert('Не удалось скопировать текст');
-        }
-      }
+      events.sort(compareEventDateTime);
+      saveEvents();
+
+      currDate = new Date(parsed.date + 'T00:00:00');
+      currDate = new Date(currDate.getFullYear(), currDate.getMonth(), 1);
+      selDateStr = parsed.date;
+
+      renderHome();
+      renderCalendar();
+      renderDayEvents();
     }
 
     function switchNav(id, btn) {
@@ -1325,8 +1459,18 @@
       document.getElementById('p-' + id).classList.add('active');
       btn.classList.add('active');
 
-      if (id === 'home') renderHome();
-      if (id === 'cal') renderCalendar();
+      if (id === 'home') {
+        renderHome();
+      }
+
+      if (id === 'cal') {
+        if (!selDateStr) {
+          selDateStr = getLocalDateStr();
+        }
+        renderCalendar();
+        renderDayEvents();
+      }
+
       if (id === 'ai') {
         const aiWrap = document.getElementById('aiMsgs');
         aiWrap.scrollTop = aiWrap.scrollHeight;
