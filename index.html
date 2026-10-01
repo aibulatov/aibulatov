@@ -2135,6 +2135,871 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
-  </script>
+  </<script>
+/* Исправленный разбор русских дат и времени. */
+function parseVoiceDateTime(rawText, now = new Date()) {
+  let s = String(rawText || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(
+      /(\d)\s*[-–]?\s*(?:ого|его|ой|ый|ий)(?![а-я])/g,
+      '$1'
+    )
+    .replace(/тыщи|тыщ|тысячи|тысяча|тысяч/g, 'тысяча');
+
+  const words = {};
+  const groups = [
+    'ноль нуль ноля нуля',
+    'один одна одно первого первый первое',
+    'два две второго второй второе',
+    'три третьего третий третье',
+    'четыре четвертого четвертый четвертое',
+    'пять пятого пятый пятое',
+    'шесть шестого шестой шестое',
+    'семь седьмого седьмой седьмое',
+    'восемь восьмого восьмой восьмое',
+    'девять девятого девятый девятое',
+    'десять десятого десятый десятое',
+    'одиннадцать одиннадцатого одиннадцатый одиннадцатое',
+    'двенадцать двенадцатого двенадцатый двенадцатое',
+    'тринадцать тринадцатого тринадцатый тринадцатое',
+    'четырнадцать четырнадцатого четырнадцатый четырнадцатое',
+    'пятнадцать пятнадцатого пятнадцатый пятнадцатое',
+    'шестнадцать шестнадцатого шестнадцатый шестнадцатое',
+    'семнадцать семнадцатого семнадцатый семнадцатое',
+    'восемнадцать восемнадцатого восемнадцатый восемнадцатое',
+    'девятнадцать девятнадцатого девятнадцатый девятнадцатое'
+  ];
+
+  groups.forEach((group, number) => {
+    group.split(' ').forEach(word => {
+      words[word] = number;
+    });
+  });
+
+  [
+    'двадцать двадцатого двадцатый двадцатое',
+    'тридцать тридцатого тридцатый тридцатое',
+    'сорок сорокового',
+    'пятьдесят',
+    'шестьдесят'
+  ].forEach((group, index) => {
+    group.split(' ').forEach(word => {
+      words[word] = (index + 2) * 10;
+    });
+  });
+
+  // Меняется только текст для анализа.
+  // Исходная диктовка сохраняется без изменения.
+  s = s.replace(/[а-я]+/g, word =>
+    Object.prototype.hasOwnProperty.call(words, word)
+      ? words[word]
+      : word
+  );
+
+  s = s.replace(
+    /\b(20|30|40|50)\s+([1-9])\b/g,
+    (_, tens, units) => Number(tens) + Number(units)
+  );
+
+  s = s.replace(
+    /\b2\s+тысяча(?:\s+(\d{1,2}))?/g,
+    (_, number) => 2000 + Number(number || 0)
+  );
+
+  s = s.replace(
+    /\b(20\d{2})\s*[-–]?\s*(?:ого|его|ой|ый|ий)(?![а-я])/g,
+    '$1'
+  );
+
+  const pad = number => String(number).padStart(2, '0');
+
+  const dateKey = date =>
+    date.getFullYear() + '-' +
+    pad(date.getMonth() + 1) + '-' +
+    pad(date.getDate());
+
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    12
+  );
+
+  const dates = [];
+  const times = [];
+  const warnings = [];
+
+  function addDate(year, month, day) {
+    const date = new Date(year, month - 1, day, 12);
+
+    if (
+      year < 1900 ||
+      year > 2199 ||
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      warnings.push(
+        'Проверьте дату: такого дня нет в указанном месяце.'
+      );
+      return;
+    }
+
+    dates.push(dateKey(date));
+  }
+
+  function relative(days) {
+    const date = new Date(today);
+    date.setDate(date.getDate() + days);
+    dates.push(dateKey(date));
+  }
+
+  function addTime(hours, minutes, period = '') {
+    hours = Number(hours);
+    minutes = Number(minutes);
+
+    if (
+      (period === 'вечера' || period === 'дня') &&
+      hours >= 1 &&
+      hours < 12
+    ) {
+      hours += 12;
+    }
+
+    if (period === 'ночи' && hours === 12) {
+      hours = 0;
+    }
+
+    if (hours > 23 || minutes > 59) {
+      warnings.push(
+        'Проверьте время: часы от 0 до 23, минуты от 0 до 59.'
+      );
+      return;
+    }
+
+    times.push(pad(hours) + ':' + pad(minutes));
+  }
+
+  // Время с двоеточием: 10:00, 15:30.
+  s = s.replace(
+    /(^|[^\d])(\d{1,2})\s*:\s*(\d{2})(?!\d)(?:\s*(утра|дня|вечера|ночи))?/g,
+    (_, before, hours, minutes, period) => {
+      addTime(hours, minutes, period);
+      return before + ' ';
+    }
+  );
+
+  // Время с точкой распознаётся после «в» или «к».
+  // Поэтому 26.09 не превращается во время.
+  s = s.replace(
+    /(^|[^а-я\d])(?:в|к)\s+(\d{1,2})\.(\d{2})(?![.\d])(?:\s*(утра|дня|вечера|ночи))?/g,
+    (_, before, hours, minutes, period) => {
+      addTime(hours, minutes, period);
+      return before + ' ';
+    }
+  );
+
+  // Формат 2026-09-26.
+  s = s.replace(
+    /\b(\d{4})-(\d{2})-(\d{2})\b/g,
+    (_, year, month, day) => {
+      addDate(+year, +month, +day);
+      return ' ';
+    }
+  );
+
+  // Форматы 26.09.2026, 26/09/26, 26.09.
+  s = s.replace(
+    /\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{4}|\d{2}))?\b/g,
+    (_, day, month, year) => {
+      const parsedYear = year
+        ? (+year < 100 ? 2000 + +year : +year)
+        : now.getFullYear();
+
+      addDate(parsedYear, +month, +day);
+      return ' ';
+    }
+  );
+
+  const months = [
+    'января', 'февраля', 'марта', 'апреля',
+    'мая', 'июня', 'июля', 'августа',
+    'сентября', 'октября', 'ноября', 'декабря'
+  ];
+
+  const monthDate = new RegExp(
+    '(?:^|[^а-я0-9])(\\d{1,2})\\s+(' +
+    months.join('|') +
+    ')(?![а-я])(?:\\s+(\\d{4})(?!\\d))?',
+    'g'
+  );
+
+  s = s.replace(monthDate, (_, day, month, year) => {
+    addDate(
+      year ? +year : now.getFullYear(),
+      months.indexOf(month) + 1,
+      +day
+    );
+    return ' ';
+  });
+
+  s = s.replace(
+    /(^|[^а-я])(послезавтра|завтра|сегодня|позавчера|вчера)(?![а-я])/g,
+    (_, before, word) => {
+      relative({
+        послезавтра: 2,
+        завтра: 1,
+        сегодня: 0,
+        вчера: -1,
+        позавчера: -2
+      }[word]);
+
+      return before + ' ';
+    }
+  );
+
+  s = s.replace(
+    /через\s+(\d+)\s+(день|дня|дней|неделю|недели|недель)(?![а-я])/g,
+    (_, number, unit) => {
+      relative(
+        +number * (unit.startsWith('недел') ? 7 : 1)
+      );
+      return ' ';
+    }
+  );
+
+  const weekdays = {
+    понедельник: 1,
+    вторник: 2,
+    среду: 3,
+    среда: 3,
+    четверг: 4,
+    пятницу: 5,
+    пятница: 5,
+    субботу: 6,
+    суббота: 6,
+    воскресенье: 0
+  };
+
+  s = s.replace(
+    /(^|[^а-я])(?:в|на)\s+(?:(следующий|следующую|следующее)\s+)?(понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье)(?![а-я])/g,
+    (_, before, next, word) => {
+      const target = weekdays[word];
+
+      // «В следующий понедельник»:
+      // понедельник следующей календарной недели.
+      const delta = next
+        ? 7 - ((today.getDay() + 6) % 7) +
+          ((target + 6) % 7)
+        : (target - today.getDay() + 7) % 7 || 7;
+
+      relative(delta);
+      return before + ' ';
+    }
+  );
+
+  // «В десять ноль пять» → «в 10 05».
+  s = s.replace(
+    /((?:в|к)\s+\d{1,2}(?:\s+час(?:а|ов)?)?)\s+0\s+([0-9])(?!\d)/g,
+    '$1 0$2'
+  );
+
+  // «В десять», «в десять тридцать»,
+  // «в три часа дня», «в 10 часов 15 минут».
+  s = s.replace(
+    /(^|[^а-я\d])(?:в|к)\s+(\d{1,2})(?:\s+час(?:а|ов)?)?(?:\s+(\d{1,2})(?:\s+минут(?:а|ы)?)?)?(?:\s*(утра|дня|вечера|ночи))?(?![\dа-я])/g,
+    (_, before, hours, minutes, period) => {
+      addTime(hours, minutes || 0, period);
+      return before + ' ';
+    }
+  );
+
+  const uniqueDates = [...new Set(dates)];
+  const uniqueTimes = [...new Set(times)];
+
+  if (!uniqueDates.length) {
+    warnings.push(
+      'Дата не распознана. Укажите её перед сохранением.'
+    );
+  }
+
+  if (uniqueDates.length > 1) {
+    warnings.push(
+      'Названо несколько дат. Выберите дату этой записи.'
+    );
+  }
+
+  if (uniqueTimes.length > 1) {
+    warnings.push(
+      'Названо несколько значений времени. Выберите время этой записи.'
+    );
+  }
+
+  if (
+    /(?:пол(?:овин[ауыей]|день|ночь|\s+\d)|четверт[ьи]|без\s+\d|(?:в|к)\s+\d|час|минут|тысяча|\d{3,4}\s*(?:года|год|г\.))/i.test(s) ||
+    months.some(month => s.includes(month))
+  ) {
+    warnings.push(
+      'Часть даты или времени требует проверки.'
+    );
+  }
+
+  return {
+    date: uniqueDates.length === 1 ? uniqueDates[0] : '',
+    time: uniqueTimes.length === 1 ? uniqueTimes[0] : '',
+    warnings: [...new Set(warnings)]
+  };
+}
+
+/* Диктовка, сохранение и четвёртая вкладка. */
+(() => {
+  'use strict';
+
+  const el = id => document.getElementById(id);
+  const oldRenderHome = window.renderHome;
+  const oldOpenModal = window.openEventModal;
+
+  let voiceBusy = false;
+  let session = null;
+
+  function renderAllEvents() {
+    const box = el('allEventsBody');
+    if (!box) return;
+
+    const query = el('allEventsSearch')
+      .value.trim().toLowerCase();
+
+    const filter = el('allEventsFilter').value;
+    const today = formatDateLocal(new Date());
+
+    const list = events.filter(event => {
+      const searchable = [
+        event.title,
+        event.notes,
+        event.date,
+        formatReadableDate(event.date)
+      ].join(' ').toLowerCase();
+
+      const matchesQuery =
+        !query || searchable.includes(query);
+
+      const matchesPeriod =
+        filter === 'all' ||
+        (filter === 'future'
+          ? event.date >= today
+          : event.date < today);
+
+      return matchesQuery && matchesPeriod;
+    }).slice().sort((a, b) =>
+      (a.date + ' ' + (a.time || '99:99')).localeCompare(
+        b.date + ' ' + (b.time || '99:99')
+      )
+    );
+
+    el('allEventsCount').textContent =
+      'Записей: ' + list.length;
+
+    box.innerHTML = '';
+
+    if (!list.length) {
+      box.innerHTML =
+        '<tr><td colspan="3">Записей нет.</td></tr>';
+      return;
+    }
+
+    for (const event of list) {
+      const row = document.createElement('tr');
+
+      row.innerHTML =
+        '<td>' +
+          escapeHtml(formatReadableDate(event.date)) +
+        '</td>' +
+        '<td>' +
+          escapeHtml(event.time || 'Не указано') +
+        '</td>' +
+        '<td>' +
+          '<button class="agenda-open"></button>' +
+          (event.notes
+            ? '<div class="agenda-notes">' +
+                escapeHtml(event.notes) +
+              '</div>'
+            : '') +
+        '</td>';
+
+      const button = row.querySelector('button');
+      button.textContent = event.title;
+
+      button.addEventListener('click', () => {
+        selectedDate = event.date;
+
+        const [year, month] =
+          event.date.split('-').map(Number);
+
+        currentMonth = new Date(year, month - 1, 1);
+
+        switchTab(
+          'cal',
+          document.querySelectorAll('.nav-btn')[1]
+        );
+      });
+
+      box.appendChild(row);
+    }
+  }
+
+  // Список обновляется при загрузке, добавлении и удалении.
+  window.renderHome = function() {
+    oldRenderHome();
+    renderAllEvents();
+  };
+
+  window.openEventModal = function() {
+    el('voiceReviewNotice').hidden = true;
+    oldOpenModal();
+  };
+
+  function reviewVoice(rawText, parsed, extra) {
+    openEventModal();
+
+    el('evTitle').value = rawText;
+    el('evNotes').value = '';
+    el('evType').value = inferVoiceType(rawText);
+    el('evDate').value = parsed.date;
+    el('evTime').value = parsed.time;
+
+    const notice = el('voiceReviewNotice');
+
+    notice.textContent = [
+      extra,
+      ...parsed.warnings
+    ].filter(Boolean).join(' ');
+
+    notice.hidden = false;
+  }
+
+  // Оставляем диктовку на экране для проверки.
+  window.clearVoiceFieldSoon = function() {};
+
+  window.autoSaveVoice = async function(
+    rawText,
+    baseDate = new Date(),
+    extra = ''
+  ) {
+    if (voiceBusy) return;
+
+    rawText = String(rawText || '').trim();
+
+    if (!rawText) {
+      toast(
+        'warn',
+        'Сначала продиктуйте или введите текст'
+      );
+      return;
+    }
+
+    const parsed = parseVoiceDateTime(
+      rawText,
+      baseDate
+    );
+
+    if (extra || parsed.warnings.length) {
+      reviewVoice(rawText, parsed, extra);
+      return;
+    }
+
+    const type = inferVoiceType(rawText);
+
+    const duplicate = events.some(event =>
+      event.title === rawText &&
+      event.date === parsed.date &&
+      event.time === parsed.time &&
+      event.type === type
+    );
+
+    if (duplicate) {
+      toast('info', 'Такая запись уже есть');
+      return;
+    }
+
+    voiceBusy = true;
+
+    const record = {
+      id: Date.now() + Math.floor(Math.random() * 100000),
+      type,
+      title: rawText,
+      date: parsed.date,
+      time: parsed.time,
+      notes: '',
+      alerted30: false,
+      alerted5: false,
+      alertedNow: false
+    };
+
+    events.push(record);
+    sortEvents();
+
+    try {
+      await saveAllEvents();
+
+      selectedDate = record.date;
+
+      const [year, month] =
+        record.date.split('-').map(Number);
+
+      currentMonth = new Date(year, month - 1, 1);
+
+      renderHome();
+      renderCalendar();
+      renderDayEvents();
+
+      toast(
+        'success',
+        'Сохранено: ' +
+        formatReadableDate(record.date) +
+        (record.time
+          ? ', ' + record.time
+          : ', без времени')
+      );
+    } catch (error) {
+      events = events.filter(
+        event => event.id !== record.id
+      );
+
+      toast(
+        'warn',
+        'Не удалось сохранить. Текст диктовки оставлен на экране.'
+      );
+    } finally {
+      voiceBusy = false;
+    }
+  };
+
+  function resetMicUI() {
+    micRunning = false;
+
+    clearInterval(micTimerHandle);
+    micTimerHandle = null;
+
+    el('micBtn').disabled = false;
+    el('micBtn').classList.remove('recording');
+    el('micIcon').textContent = '🎤';
+    el('micLabel').textContent = 'Диктовка';
+    el('micTimer').textContent = '';
+    el('saveVoiceText').disabled = false;
+  }
+
+  window.startMic = function() {
+    if (session || voiceBusy) return;
+
+    const SR =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    if (!SR) {
+      toast(
+        'warn',
+        'Используйте микрофон клавиатуры в поле текста, затем нажмите «Записать текст».'
+      );
+      return;
+    }
+
+    const rec = new SR();
+
+    const current = {
+      rec,
+      baseDate: new Date(),
+      final: '',
+      interim: '',
+      error: '',
+      done: false
+    };
+
+    session = current;
+    recognition = rec;
+
+    rec.lang = 'ru-RU';
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    rec.onresult = event => {
+      if (session !== current || current.done) return;
+
+      const final = [];
+      const interim = [];
+
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+
+        (result.isFinal ? final : interim).push(
+          result[0].transcript
+        );
+      }
+
+      current.final = final.join(' ').trim();
+      current.interim = interim.join(' ').trim();
+
+      transcriptBuffer = [
+        current.final,
+        current.interim
+      ].filter(Boolean).join(' ');
+
+      el('voiceText').value = transcriptBuffer;
+    };
+
+    rec.onerror = event => {
+      current.error = event.error || 'unknown';
+
+      toast(
+        'warn',
+        event.error === 'not-allowed'
+          ? 'Разрешите доступ к микрофону в настройках браузера.'
+          : 'Диктовка прервалась. Проверьте распознанный текст.'
+      );
+    };
+
+    rec.onend = async () => {
+      if (current.done) return;
+      current.done = true;
+
+      if (session === current) {
+        session = null;
+      }
+
+      resetMicUI();
+
+      const rawText = [
+        current.final,
+        current.interim
+      ].filter(Boolean).join(' ').trim();
+
+      if (!rawText) {
+        if (!current.error) {
+          toast(
+            'info',
+            'Речь не распознана. Попробуйте ещё раз.'
+          );
+        }
+        return;
+      }
+
+      await autoSaveVoice(
+        rawText,
+        current.baseDate,
+        current.error || current.interim
+          ? 'Диктовка завершена не полностью. Проверьте запись.'
+          : ''
+      );
+    };
+
+    try {
+      rec.start();
+
+      transcriptBuffer = '';
+      el('voiceText').value = '';
+
+      micRunning = true;
+      micStartedAt = Date.now();
+
+      el('micBtn').classList.add('recording');
+      el('micIcon').textContent = '🛑';
+      el('micLabel').textContent = 'Завершить';
+      el('saveVoiceText').disabled = true;
+
+      micTimerHandle = setInterval(
+        updateMicTimer,
+        1000
+      );
+
+      updateMicTimer();
+    } catch (error) {
+      current.done = true;
+      session = null;
+
+      resetMicUI();
+
+      toast(
+        'warn',
+        'Микрофон не запустился. Проверьте разрешение браузера.'
+      );
+    }
+  };
+
+  window.stopMic = function() {
+    if (!session || session.done) return;
+
+    el('micBtn').disabled = true;
+    el('micLabel').textContent = 'Обработка…';
+
+    try {
+      session.rec.stop();
+    } catch (error) {
+      session.error = 'stop-error';
+      session.rec.onend();
+    }
+  };
+
+  const style = document.createElement('style');
+
+  style.textContent = `
+    .nav {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .agenda-wrap {
+      overflow: auto;
+      border-radius: 18px;
+    }
+
+    .agenda-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .agenda-table th,
+    .agenda-table td {
+      padding: 12px 8px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .agenda-table th {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .agenda-table td:first-child {
+      white-space: nowrap;
+    }
+
+    .agenda-open {
+      border: 0;
+      background: none;
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      overflow-wrap: anywhere;
+    }
+
+    .agenda-notes {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 6px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .action-btn:disabled,
+    .secondary-btn:disabled {
+      opacity: .6;
+    }
+  `;
+
+  document.head.appendChild(style);
+
+  const page = document.createElement('section');
+
+  page.id = 'p-all';
+  page.className = 'section';
+
+  page.innerHTML = `
+    <div class="header">
+      <div class="logo">aibulatov.ai</div>
+    </div>
+
+    <div class="section-title">Все дела</div>
+
+    <input
+      id="allEventsSearch"
+      class="field"
+      placeholder="Поиск по делу, клиенту или дате"
+      aria-label="Поиск дел"
+    />
+
+    <select
+      id="allEventsFilter"
+      class="field"
+      aria-label="Период"
+    >
+      <option value="all">Все записи</option>
+      <option value="future">Сегодня и далее</option>
+      <option value="past">Прошедшие даты</option>
+    </select>
+
+    <div id="allEventsCount" class="helper"></div>
+
+    <div class="card agenda-wrap">
+      <table class="agenda-table">
+        <thead>
+          <tr>
+            <th scope="col">Дата</th>
+            <th scope="col">Время</th>
+            <th scope="col">Дело</th>
+          </tr>
+        </thead>
+        <tbody id="allEventsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="helper">
+      Нажмите на название дела, чтобы открыть его
+      в календаре.
+    </div>
+  `;
+
+  document.querySelector('.main').appendChild(page);
+
+  const nav = document.createElement('button');
+
+  nav.className = 'nav-btn';
+  nav.innerHTML = `
+    <div class="nav-ico">📋</div>
+    <div>Все дела</div>
+  `;
+
+  nav.onclick = () => {
+    switchTab('all', nav);
+    renderAllEvents();
+  };
+
+  document.querySelector('.nav').appendChild(nav);
+
+  el('allEventsSearch').oninput = renderAllEvents;
+  el('allEventsFilter').onchange = renderAllEvents;
+
+  const notice = document.createElement('div');
+
+  notice.id = 'voiceReviewNotice';
+  notice.className = 'banner';
+  notice.hidden = true;
+
+  document.querySelector(
+    '#eventModal .modal-title'
+  ).after(notice);
+
+  const save = document.createElement('button');
+
+  save.id = 'saveVoiceText';
+  save.className = 'secondary-btn';
+  save.style.cssText = 'width:100%;margin-top:10px';
+  save.textContent = 'Записать текст';
+
+  save.onclick = () =>
+    autoSaveVoice(el('voiceText').value);
+
+  el('voiceText').closest('.card').after(save);
+
+  document.querySelector('#p-home .helper').textContent =
+    'Назовите дату и время. Например: ' +
+    '«На завтра судебный процесс в десять». ' +
+    'Понятная запись сохраняется автоматически, ' +
+    'неоднозначная открывается для проверки. ' +
+    'Одна диктовка — одно дело.';
+})();
+</script>
 </body>
 </html>
