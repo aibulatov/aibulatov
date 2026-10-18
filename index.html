@@ -2,11 +2,11 @@
 <html lang="ru" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f8f7f4" />
-  <title>aibulatov.ai</title>
+  <title>aibulatov.ai · Еженедельник</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -503,7 +503,7 @@
       background:var(--surface);
       border-top:1px solid var(--border);
       display:grid;
-      grid-template-columns:repeat(3,1fr);
+      grid-template-columns:repeat(5,minmax(0,1fr));
       padding:12px 0 calc(12px + env(safe-area-inset-bottom));
       z-index:20;
     }
@@ -776,6 +776,84 @@
       border:0;
     }
   </style>
+<style>
+/* Weekly planner, responsive on iPhone and desktop. */
+:root{--wp-ink:#29352e;--wp-muted:#69756e;--wp-green:#436b55;--wp-soft:#eaf0e8;--wp-line:#e2e7e1}
+[data-theme="dark"]{--wp-ink:#e7eee8;--wp-muted:#a6b4a9;--wp-green:#95c4a4;--wp-soft:#24332a;--wp-line:#334138}
+#p-week{--wp-ink:var(--text);--wp-muted:var(--text-dim);--wp-green:var(--accent);--wp-soft:var(--accent-soft);--wp-line:var(--border)}
+#p-week .header{align-items:center}
+.wp-intro{margin:5px 0 28px;max-width:680px;color:var(--wp-ink)}
+.wp-eyebrow{font-size:10px;letter-spacing:2.3px;font-weight:600;color:var(--wp-green)}
+.wp-intro h1{font-size:46px;line-height:1.13;letter-spacing:-2px;font-weight:500;margin:14px 0}
+.wp-intro p{font-size:14px;line-height:1.7;color:var(--wp-muted);max-width:490px}
+.wp-layout{display:grid;grid-template-columns:1fr;gap:26px;align-items:start}
+.wp-compose{padding:22px;border-radius:22px;box-shadow:none;position:static}
+.wp-compose-head{display:flex;flex-direction:column;gap:5px;margin-bottom:20px;color:var(--wp-ink)}
+.wp-compose-head strong{font-size:19px;letter-spacing:-.5px;font-weight:600}
+.wp-compose-head>span{font-size:12px;color:var(--wp-muted)}
+.wp-default-label,.wp-input-label{display:block;font-size:11px;color:var(--wp-muted);line-height:1.5;margin-bottom:6px}
+#wpDefaultDate{margin-bottom:12px;padding:10px 12px;min-height:42px;font-size:14px;border-radius:10px;width:100%;max-width:100%;min-width:0;appearance:none;-webkit-appearance:none}
+.wp-compose .transcript-box{padding:14px;border:1px solid var(--wp-line);border-radius:12px;min-height:190px;font-size:15px;line-height:1.8;background:var(--surface-soft);margin-bottom:12px}
+.wp-compose .transcript-box::placeholder{color:var(--wp-muted);opacity:.8}
+.wp-compose-actions{display:flex;gap:9px;align-items:stretch}
+.wp-mic{background:var(--wp-soft);border:1px solid var(--wp-line);color:var(--wp-green);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;min-height:46px;cursor:pointer;flex:1}
+.wp-mic.recording{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+#wpMicIcon{font-size:13px}#wpMicTimer{font-size:10px;font-variant-numeric:tabular-nums}
+.wp-primary{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 15px;font-size:12px;font-weight:600;min-height:46px;cursor:pointer;flex:1.2}
+.wp-wide{width:100%;margin-top:12px;font-size:14px}
+.wp-hint{font-size:11px;line-height:1.7;color:var(--wp-muted);margin-top:12px}
+.wp-review-title{font-size:16px;color:var(--wp-ink);margin-top:22px;font-weight:600}
+.wp-draft{border:1px solid var(--wp-line);border-radius:13px;padding:13px;margin-top:12px;background:var(--surface-soft)}
+.wp-draft-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px;color:var(--wp-muted)}
+.wp-remove{font-size:11px;color:var(--danger);background:none;border:0;padding:5px;cursor:pointer}
+.wp-draft .field{padding:10px 8px;font-size:14px;border-radius:8px;margin-top:5px;margin-bottom:0;min-width:0;max-width:100%;min-height:42px;appearance:none;-webkit-appearance:none}
+.wp-fields{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-top:10px}
+.wp-fields label{min-width:0;font-size:10px}
+.wp-draft-note,.wp-review-warning{font-size:10px;line-height:1.6;color:var(--wp-muted);margin-top:10px}
+.wp-review-warning{color:var(--danger)}
+.wp-week-title{display:flex;justify-content:space-between;align-items:center;margin:0 0 18px;color:var(--wp-ink)}
+.wp-week-title h2{font-size:25px;letter-spacing:-1px;font-weight:500;line-height:1.3}
+.wp-week-title span{display:block;font-size:11px;color:var(--wp-muted);margin-top:5px}
+.wp-small{border:1px solid var(--wp-line);border-radius:10px;background:var(--surface);color:var(--wp-ink);font-size:11px;padding:9px 13px;cursor:pointer;min-height:36px}
+.wp-week-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;color:var(--wp-ink)}
+.wp-week-nav>button{border:1px solid var(--wp-line);background:var(--surface);color:var(--wp-ink);font-size:24px;width:34px;height:34px;line-height:1;border-radius:9px;cursor:pointer;flex-shrink:0}
+.wp-week-nav strong{font-size:12px;font-weight:500;text-align:center}
+.wp-progress{height:3px;border-radius:4px;overflow:hidden;background:var(--wp-soft);margin-bottom:16px}
+#wpProgress{height:100%;background:var(--wp-green);transition:width .2s}
+.wp-pills{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-bottom:20px}
+.wp-pill{border:1px solid var(--wp-line);border-radius:12px;background:var(--surface);color:var(--wp-muted);padding:9px 2px 7px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.wp-pill>span{font-size:10px;text-transform:uppercase}.wp-pill strong{font-size:18px;font-weight:500}.wp-pill i{font-size:9px;font-style:normal;min-width:14px;height:14px;line-height:14px;border-radius:50%;background:var(--wp-soft)}
+.wp-pill.chosen{background:var(--accent);color:#fff;border-color:var(--accent)}.wp-pill.chosen i{color:#fff;background:#ffffff26}.wp-pill.is-today:not(.chosen){border-color:var(--wp-green);color:var(--wp-green)}
+.wp-day{border:1px solid var(--wp-line);background:var(--surface);border-radius:15px;overflow:hidden;margin-bottom:12px;scroll-margin-top:15px}
+.wp-day.today{border-color:var(--wp-green)}.wp-day-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 15px;background:var(--surface-soft)}
+.wp-day-head h3{color:var(--wp-ink);font-size:12px;font-weight:500;line-height:1.5;text-transform:capitalize}
+.wp-day.today .wp-day-head{background:var(--wp-soft)}
+.wp-add{background:none;border:1px solid var(--wp-line);border-radius:7px;width:29px;height:29px;color:var(--wp-green);font-size:21px;cursor:pointer;flex-shrink:0}
+.wp-day-empty{color:var(--wp-muted);font-size:11px;padding:13px 15px}
+.wp-task{display:flex;gap:12px;border-top:1px solid var(--wp-line);padding:14px 15px;align-items:flex-start}
+.wp-check{flex-shrink:0;padding-top:3px;cursor:pointer}.wp-check input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
+.wp-task-main{flex:1;min-width:0;text-align:left;background:none;border:0;color:var(--wp-ink);cursor:pointer}
+.wp-task-top{display:flex;gap:9px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.wp-time{font-size:11px;color:var(--wp-green);font-variant-numeric:tabular-nums;font-weight:500}
+.wp-kind{font-size:9px;background:var(--wp-soft);color:var(--wp-green);padding:3px 6px;border-radius:5px}
+.wp-kind.court{background:#eaf0fc;color:#466495}.wp-kind.consult{background:#f7eee6;color:#946947}
+[data-theme="dark"] .wp-kind.court{background:#243149;color:#abc2ef}[data-theme="dark"] .wp-kind.consult{background:#392e24;color:#d9b08e}
+.wp-task-title{font-size:14px;line-height:1.6;display:block;overflow-wrap:anywhere}
+.wp-task-notes{display:block;font-size:11px;color:var(--wp-muted);line-height:1.6;margin-top:5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.is-done .wp-task-title,.is-done .wp-table-title{text-decoration:line-through;color:var(--wp-muted)}
+.wp-task.is-conflict{border-left:3px solid var(--danger);padding-left:12px}.wp-collision{display:block;color:var(--danger);font-size:10px;margin-top:7px}
+.wp-bottom{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:22px;color:var(--wp-muted);font-size:10px}
+.wp-bottom button{background:none;border:0;text-decoration:underline;text-underline-offset:3px;color:var(--wp-green);font-size:11px;padding:8px;cursor:pointer}
+.nav{grid-template-columns:repeat(5,minmax(0,1fr))}.nav-btn{font-size:8px;gap:6px;min-width:0}.nav-btn>div:last-child{font-size:8px;text-transform:none;letter-spacing:0}.nav-ico{font-size:22px}
+.wp-table-wrap{overflow:auto;max-width:100%}.wp-table{width:100%;border-collapse:collapse;font-size:12px}.wp-table th,.wp-table td{text-align:left;padding:13px 9px;border-bottom:1px solid var(--wp-line);vertical-align:top}.wp-table th{background:var(--wp-soft);color:var(--wp-green);font-size:11px}.wp-table td:first-child{white-space:nowrap}.wp-table-title{border:0;background:none;color:var(--text);font-size:13px;text-align:left;cursor:pointer;overflow-wrap:anywhere;line-height:1.6}
+.wp-delete{border:0;background:none;color:var(--danger);font-size:13px;padding:13px;width:100%;margin-top:8px;cursor:pointer}
+#p-week.wp-saving button,.wp-saving input[type="checkbox"]{pointer-events:none;opacity:.65}
+#p-week button:focus-visible,#p-week input:focus-visible,#p-week textarea:focus-visible,#p-week select:focus-visible{outline:2px solid var(--wp-green);outline-offset:3px}
+[hidden]{display:none!important}
+@media(max-width:760px){.wp-layout{grid-template-columns:1fr;gap:30px}.wp-compose{position:static;padding:19px}.wp-intro h1{font-size:37px;letter-spacing:-1.6px}.wp-intro{margin-bottom:22px}#p-week .header{padding-bottom:23px}.wp-intro p{font-size:13px}.wp-compose .transcript-box{min-height:165px}.wp-primary{font-size:12px;padding:12px 9px}.wp-mic{font-size:12px}.wp-week-title h2{font-size:25px}.wp-fields{grid-template-columns:1fr 1fr}.wp-fields label:first-child{grid-column:1/-1}.wp-fields label{font-size:11px}.wp-draft .field{font-size:16px}.wp-compose .transcript-box{font-size:16px}.wp-table{font-size:11px}#p-week .field{min-width:0;max-width:100%}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+</style>
 </head>
 <body>
   <div class="toast-wrap" id="toasts"></div>
@@ -928,6 +1006,15 @@
       <button class="nav-btn" onclick="switchTab('ai', this)">
         <div class="nav-ico">⚖️</div>
         <div>ИИ</div>
+      </button>
+
+      <button id="allNav" class="nav-btn" onclick="switchTab('all', this)">
+        <div class="nav-ico">📋</div>
+        <div>Все дела</div>
+      </button>
+      <button id="wpNav" class="nav-btn" onclick="switchTab('week', this)">
+        <div class="nav-ico">🗓️</div>
+        <div>Еженедельник</div>
       </button>
     </nav>
   </div>
@@ -2844,7 +2931,7 @@ function parseVoiceDateTime(rawText, now = new Date()) {
 
   style.textContent = `
     .nav {
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns:repeat(5,minmax(0,1fr));
     }
 
     .agenda-wrap {
@@ -2954,7 +3041,7 @@ function parseVoiceDateTime(rawText, now = new Date()) {
 
   document.querySelector('.main').appendChild(page);
 
-  const nav = document.createElement('button');
+  const nav = document.getElementById('allNav');
 
   nav.className = 'nav-btn';
   nav.innerHTML = `
@@ -3001,6 +3088,435 @@ function parseVoiceDateTime(rawText, now = new Date()) {
     'неоднозначная открывается для проверки. ' +
     'Одна диктовка — одно дело.';
 })();
+</script>
+
+<script>
+/* Local Russian schedule parser. Original dictation is always retained. */
+(function(root) {
+  'use strict';
+  const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const WEEKDAYS = {понедельник:1,вторник:2,среда:3,среду:3,четверг:4,пятница:5,пятницу:5,суббота:6,субботу:6,воскресенье:0};
+  const pad = n => String(n).padStart(2,'0');
+  const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  function localDate(key) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key || '')) return null;
+    const [y,m,d] = key.split('-').map(Number), result = new Date(y,m-1,d,12);
+    return y >= 1900 && y <= 2199 && dateKey(result) === key ? result : null;
+  }
+  const plusDays = (base,n) => {const d = new Date(base); d.setDate(d.getDate()+n); return d;};
+  const monday = d => plusDays(new Date(d.getFullYear(),d.getMonth(),d.getDate(),12), -((d.getDay()+6)%7));
+  const validTime = t => !t || /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(t);
+  function spokenNumbers(text) {
+    const groups = [
+      'ноль нуль ноля нуля','один одна одно первого первый первое','два две второго второй второе',
+      'три третьего третий третье','четыре четвертого четвертый четвертое','пять пятого пятый пятое',
+      'шесть шестого шестой шестое','семь седьмого седьмой седьмое','восемь восьмого восьмой восьмое',
+      'девять девятого девятый девятое','десять десятого десятый десятое',
+      'одиннадцать одиннадцатого одиннадцатый одиннадцатое','двенадцать двенадцатого двенадцатый двенадцатое',
+      'тринадцать тринадцатого тринадцатый тринадцатое','четырнадцать четырнадцатого четырнадцатый четырнадцатое',
+      'пятнадцать пятнадцатого пятнадцатый пятнадцатое','шестнадцать шестнадцатого шестнадцатый шестнадцатое',
+      'семнадцать семнадцатого семнадцатый семнадцатое','восемнадцать восемнадцатого восемнадцатый восемнадцатое',
+      'девятнадцать девятнадцатого девятнадцатый девятнадцатое'
+    ], words = {};
+    groups.forEach((g,n) => g.split(' ').forEach(w => words[w]=n));
+    ['двадцать двадцатого двадцатый двадцатое','тридцать тридцатого тридцатый тридцатое','сорок сорокового','пятьдесят','шестьдесят']
+      .forEach((g,i) => g.split(' ').forEach(w => words[w]=(i+2)*10));
+    return String(text || '').normalize('NFKC').replace(/ё/gi,'е')
+      .replace(/(\d)\s*[-–]?\s*(?:ого|его|ой|ый|ий|й)(?![а-я])/gi,'$1')
+      .replace(/[а-я]+/gi,w => {
+        const k=w.toLowerCase();
+        if (/^(тыщи|тыщ|тысячи|тысяча|тысяч)$/.test(k)) return 'тысяча';
+        return Object.prototype.hasOwnProperty.call(words,k) ? String(words[k]) : w;
+      })
+      .replace(/\b(20|30|40|50)\s+([1-9])\b/g,(_,a,b)=>+a + +b)
+      .replace(/\b2\s+тысяча(?:\s+(\d{1,2}))?/gi,(_,n)=>2000 + +(n||0))
+      .replace(/(\d)\s*[-–]?\s*(?:ого|его|ой|ый|ий|й)(?![а-я])/gi,'$1')
+      .replace(/((?:в|к|с|до)\s+\d{1,2}(?:\s+час(?:а|ов)?)?)\s+0\s+([0-9])(?!\d)/gi,'$1 0$2');
+  }
+  function parseOne(raw, base = new Date(), defaultDate = dateKey(base)) {
+    let text = spokenNumbers(raw);
+    const dates=[], times=[], endTimes=[], warnings=[];
+    const today = new Date(base.getFullYear(),base.getMonth(),base.getDate(),12);
+    const addDate=(y,m,d) => {
+      const key=`${y}-${pad(m)}-${pad(d)}`;
+      if(localDate(key)) dates.push(key); else warnings.push('Такой даты нет. Выберите правильную дату.');
+    };
+    const timeValue=(h,m,p) => {
+      h=+h; m=+(m||0);
+      if (/^(дня|вечера)$/i.test(p||'') && h>=1 && h<12) h+=12;
+      if (/^(ночи)$/i.test(p||'') && h===12) h=0;
+      const key=pad(h)+':'+pad(m);
+      if(!validTime(key)) {warnings.push('Проверьте время.'); return '';}
+      return key;
+    };
+    // Ranges are consumed before dates or single times.
+    const rangeRE=/(?:^|[^а-я\d])с\s+(\d{1,2})(?::(\d{2}))?(?:\s+час(?:а|ов)?)?\s+до\s+(\d{1,2})(?::(\d{2}))?(?:\s+час(?:а|ов)?)?(?:\s+(утра|дня|вечера|ночи))?(?![а-я\d])/gi;
+    text=text.replace(rangeRE,(_,h,m,eh,em,p)=>{
+      const start=timeValue(h,m,p), end=timeValue(eh,em,p);
+      if(start)times.push(start); if(end)endTimes.push(end);
+      return ' ';
+    });
+    text=text.replace(/(^|[^\d])(?:в\s+|к\s+)?(\d{1,2}):([0-9]{2})(?!\d)(?:\s*(утра|дня|вечера|ночи))?/gi,
+      (_,before,h,m,p)=>{const t=timeValue(h,m,p);if(t)times.push(t);return before+' ';});
+    text=text.replace(/(^|[^а-я\d])(?:в|к)\s+(\d{1,2})\.(\d{2})(?![.\d])(?:\s*(утра|дня|вечера|ночи))?/gi,
+      (_,before,h,m,p)=>{const t=timeValue(h,m,p);if(t)times.push(t);return before+' ';});
+    text=text.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(_,y,m,d)=>{addDate(+y,+m,+d);return ' ';});
+    text=text.replace(/\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{4}|\d{2}))?\b/g,(_,d,m,y)=>{
+      addDate(y?(+y<100?2000 + +y:+y):base.getFullYear(),+m,+d);return ' ';
+    });
+    text=text.replace(new RegExp('(?:^|[^а-я0-9])(\\d{1,2})\\s+('+MONTHS.join('|')+')(?![а-я])(?:\\s+(\\d{4})(?!\\d)(?:\\s*(?:года|год|г\\.?)(?![а-я]))?)?','gi'),
+      (_,d,m,y)=>{addDate(y?+y:base.getFullYear(),MONTHS.indexOf(m.toLowerCase())+1,+d);return ' ';});
+    text=text.replace(/(^|[^а-я])(послезавтра|завтра|сегодня|позавчера|вчера)(?![а-я])/gi,(_,before,w)=>{
+      dates.push(dateKey(plusDays(today,{послезавтра:2,завтра:1,сегодня:0,позавчера:-2,вчера:-1}[w.toLowerCase()])));return before+' ';
+    });
+    text=text.replace(/через\s+(\d+)\s+(день|дня|дней|неделю|недели|недель)(?![а-я])/gi,(_,n,unit)=>{
+      dates.push(dateKey(plusDays(today,+n*(unit.toLowerCase().startsWith('недел')?7:1))));return ' ';
+    });
+    text=text.replace(/(^|[^а-я])(?:в|на)\s+(?:(следующий|следующую|следующее|этот|эту|это)\s+)?(понедельник|вторник|среда|среду|четверг|пятница|пятницу|суббота|субботу|воскресенье)(?![а-я])/gi,
+      (_,before,next,word)=>{
+        const target=WEEKDAYS[word.toLowerCase()];
+        const delta=next && /^след/i.test(next) ? 7-((today.getDay()+6)%7)+((target+6)%7) : (target-today.getDay()+7)%7;
+        dates.push(dateKey(plusDays(today,delta)));return before+' ';
+      });
+    text=text.replace(/(^|[^а-я\d])(?:в|к)\s+(\d{1,2})(?:\s+час(?:а|ов)?)?(?:\s+(\d{1,2})(?:\s+минут(?:а|ы)?)?)?(?:\s*(утра|дня|вечера|ночи))?(?![\dа-я])/gi,
+      (_,before,h,m,p)=>{const t=timeValue(h,m,p);if(t)times.push(t);return before+' ';});
+    const uniqueDates=[...new Set(dates)],uniqueTimes=[...new Set(times)];
+    if(uniqueDates.length>1)warnings.push('В одной задаче несколько дат. Выберите одну дату.');
+    if(uniqueTimes.length>1)warnings.push('В одной задаче несколько значений времени. Выберите время.');
+    if(/(^|[^а-я])(?:пол(?:овин[ауыей]|день|ночь|\s+\d)|без\s+\d|четверт[ьи]|(?:в|к)\s+\d|тысяча|час(?:а|ов)?|минут[ауы]?)(?![а-я])/i.test(text) || MONTHS.some(m=>text.toLowerCase().includes(m))) {
+      warnings.push('Часть даты или времени не разобрана. Проверьте поля.');
+    }
+    const uncertainDate=/(?:следующ[а-я]*\s+недел|на\s+неделе|когда-нибудь|позже|на\s+выходных)/i.test(text);
+    if(uncertainDate)warnings.push('Уточните конкретный день.');
+    const explicitDate=uncertainDate || uniqueDates.length>0 || warnings.some(w=>w.startsWith('Такой даты'));
+    const date=uncertainDate?'':uniqueDates.length===1?uniqueDates[0]:(explicitDate?'':defaultDate);
+    if(!localDate(date))warnings.push('Укажите дату.');
+    const time=uniqueTimes.length===1?uniqueTimes[0]:'';
+    const endTime=endTimes.length===1?endTimes[0]:'';
+    if(endTime && time && endTime<=time)warnings.push('Время окончания должно быть позже начала в тот же день.');
+    let title=text.replace(/^\s*(?:запиши(?:те)?|добавь(?:те)?|запланируй(?:те)?|(?:мои\s+)?задач[аи]|поручение)\s*[:,-]?\s*/i,'')
+      .replace(/^\s*(?:на|в|к)\s+(?=[,.:;\s]|$)/i,'').replace(/^[\s,.;:!–—-]+|[\s,.;:!–—-]+$/g,'')
+      .replace(/\s+/g,' ').trim().replace(/^(?:на|в|к)$/i,'');
+    return {title,date,time,endTime,explicitDate,warnings:[...new Set(warnings)],source:String(raw).trim()};
+  }
+  function parseBatch(raw, base=new Date(), defaultDate=dateKey(base)) {
+    // Normalize number words for segmentation but preserve each user's phrase in source.
+    // Sentences, newlines and explicit sequencing are reliable task separators.
+    const numbered=spokenNumbers(raw);
+    const month='(?:'+MONTHS.join('|')+')';
+    const day='(?:понедельник|вторник|среду|среда|четверг|пятницу|пятница|субботу|суббота|воскресенье)';
+    const date='(?:(?:на\\s+)?(?:послезавтра|завтра|сегодня)|через\\s+\\d+\\s+(?:день|дня|дней|неделю|недели|недель)|(?:в|на)\\s+(?:(?:следующ(?:ий|ую|ее)|этот|эту)\\s+)?'+day+'|\\d{1,2}\\s+'+month+'|\\d{1,2}[./]\\d{1,2}(?:[./]\\d{2,4})?)';
+    const time='(?:(?:в|к)\\s+\\d{1,2}(?!\\d)|с\\s+\\d{1,2}\\s+до\\s+\\d{1,2})';
+    let text=numbered.replace(/\r\n?/g,'\n')
+      .replace(/(?:;|\n)+|(?:^|[\s,])(?:а\s+)?(?:затем|потом|далее|дальше|следующая задача|новая задача)(?![а-я])\s*[,.:]?/gi,'\n')
+      .replace(new RegExp('[.!?]\\s+(?=[А-Яа-я])','g'),'\n');
+    // Split before a new dated clause or a new timed clause, not inside a title.
+    text=text.replace(new RegExp('(?:,|\\s+(?:и|а))\\s+(?=(?:'+date+'|'+time+'))','gi'),'\n');
+    text=text.replace(/(?:,|\s+и)\s+(?=(?:подготовить|позвонить|отправить|направить|проверить|оплатить|подать|получить|купить|встретиться|обсудить|забрать|изучить|составить)(?![а-я]))/gi,'\n');
+    // Without punctuation, a second time marker still starts the next task.
+    const rough=[],dated=[];
+    for(const line of text.split('\n')) {
+      const markers=[...line.matchAll(new RegExp('(?:^|\\s)('+date+')','gi'))];
+      let start=0;
+      for(const marker of markers) {
+        const index=marker.index;
+        if(index<=start)continue;
+        const before=line.slice(start,index),after=line.slice(index+marker[0].length);
+        if(/(?:^|\s)(?:в|к)\s*$/i.test(before) && /^\s*\d{1,2}\.\d{2}\s*$/.test(marker[0]))continue;
+        // A trailing date belongs to the preceding task; a date before a new task starts a new clause.
+        if(parseOne(before,base,defaultDate).title && parseOne(after,base,defaultDate).title) {
+          dated.push(before);start=index;
+        }
+      }
+      dated.push(line.slice(start));
+    }
+    for(const line of dated) {
+      const markers=[...line.matchAll(/(?:^|\s)(?:в|к)\s+\d{1,2}(?!\d)(?::\d{2})?(?:\s+час(?:а|ов)?)?/gi)];
+      let start=0;
+      for(let i=1;i<markers.length;i++) {
+        const index=markers[i].index;
+        const before=line.slice(start,index);
+        if(parseOne(before,base,defaultDate).title) {rough.push(before);start=index;}
+      }
+      rough.push(line.slice(start));
+    }
+    let scope=defaultDate, pendingTime='',pendingEnd='',contextWarnings=[];
+    const result=[];
+    for(const phrase of rough.map(s=>s.trim()).filter(Boolean)) {
+      const task=parseOne(phrase,base,scope);
+      if(task.explicitDate) {scope=task.date;pendingTime='';pendingEnd='';contextWarnings=task.warnings.filter(w=>/дат|день/.test(w));}
+      if(!task.title && (task.explicitDate || task.time || task.warnings.length)) {
+        if(task.time){pendingTime=task.time;pendingEnd=task.endTime;}
+        contextWarnings=[...new Set([...contextWarnings,...task.warnings])];
+        continue;
+      }
+      if(!task.title)continue;
+      if(!task.time && pendingTime) {task.time=pendingTime;task.endTime=pendingEnd;}
+      pendingTime='';pendingEnd='';
+      task.warnings=[...new Set([...contextWarnings,...task.warnings])];
+      result.push(task);
+    }
+    if(!result.length && String(raw).trim())result.push({...parseOne(raw,base,defaultDate),title:'',warnings:['Не удалось выделить задачу. Введите её название.']});
+    return result;
+  }
+  const api={parseOne,parseBatch,spokenNumbers,localDate,dateKey,plusDays,monday,validTime};
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  else root.WeeklyParser=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+/* Weekly planner. Uses the existing event database and storage key. */
+(() => {
+  'use strict';
+  const P=WeeklyParser, $=id=>document.getElementById(id);
+  const today=()=>P.dateKey(new Date());
+  const readable=d=>P.localDate(d)?.toLocaleDateString('ru-RU',{day:'numeric',month:'long'}) || 'Выберите дату';
+  const TYPES={court:'Суд',consult:'Встреча',task:'Задача'};
+  let week=P.monday(new Date()), selected=today(), drafts=[], editing=null, busy=false, session=null;
+  let draftAnchor=new Date(), parsing=false;
+  const DRAFT_KEY='aibulatov_weekly_dictation_v1';
+  const previousRenderHome=window.renderHome;
+  const previousToggleMic=window.toggleMic;
+  const baseNormalize=window.normalizeEvent;
+  window.normalizeEvent=function(record) {
+    const e=baseNormalize(record);
+    if(!e || !P.localDate(e.date))return null;
+    return {...e,done:!!record.done,endTime:P.validTime(record.endTime)?record.endTime||'':'',originalText:String(record.originalText||'')};
+  };
+  const previousLoad=window.loadEvents;
+  window.loadEvents=async function() {
+    try {
+      const raw=localStorage.getItem(APP_STORAGE_KEY);
+      if(raw!==null) {
+        const data=JSON.parse(raw);
+        if(Array.isArray(data))return data.map(normalizeEvent).filter(Boolean);
+      }
+    } catch(e) {toast('warn','Не удалось прочитать локальную копию. Проверяю базу записей.');}
+    return await previousLoad();
+  };
+  window.saveAllEvents=async function() {
+    // This is the authoritative copy. An IndexedDB failure must not resurrect old data.
+    const snapshot=JSON.parse(JSON.stringify(events));
+    localStorage.setItem(APP_STORAGE_KEY,JSON.stringify(snapshot));
+    if(!db)return;
+    try {
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction(STORE_NAME,'readwrite'), store=tx.objectStore(STORE_NAME);
+        store.clear();snapshot.forEach(e=>store.put(e));
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+      });
+    } catch(e) {console.info('Events saved to local storage; database mirror unavailable.');}
+  };
+  let lastId=0;
+  function uid(){lastId=Math.max(Date.now()*1000,lastId+1);return lastId;}
+  window.sortEvents=function(){events.sort((a,b)=>(a.date+' '+(a.time||'99:99')).localeCompare(b.date+' '+(b.time||'99:99')) || Number(a.id)-Number(b.id));};
+  function goWeek(date) {
+    selected=date;week=P.monday(P.localDate(date));$('wpDefaultDate').value=date;
+    renderHome();
+  }
+  function refresh(){sortEvents();renderHome();renderCalendar();renderDayEvents();renderAll();}
+  function timesOverlap(a,b) {
+    if(a.done||b.done||!a.time||!b.time||a.date!==b.date)return false;
+    if(a.time===b.time)return true;
+    const ae=a.endTime||a.time,be=b.endTime||b.time;
+    return (a.endTime&&b.endTime&&a.time<be&&b.time<ae) ||
+      (a.endTime&&b.time>a.time&&b.time<ae) || (b.endTime&&a.time>b.time&&a.time<be);
+  }
+  function conflictIds(list) {
+    const ids=new Set();for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)if(timesOverlap(list[i],list[j])){ids.add(list[i].id);ids.add(list[j].id);}return ids;
+  }
+  window.renderConflicts=function(id) {
+    const box=$(id);if(!box)return;box.innerHTML='';
+    const relevant=events.filter(e=>e.date>=today()), ids=conflictIds(relevant);
+    if(ids.size)box.innerHTML='<div class="banner">Есть записи на одинаковое или пересекающееся время. Проверьте расписание.</div>';
+  };
+  function taskRow(event, conflicting=false) {
+    const row=document.createElement('div');row.className='wp-task '+(event.done?'is-done ':'')+(conflicting?'is-conflict':'');
+    const label=document.createElement('label');label.className='wp-check';
+    const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!!event.done;
+    checkbox.setAttribute('aria-label','Выполнено: '+event.title);checkbox.onchange=()=>setDone(event.id,checkbox.checked);label.appendChild(checkbox);
+    const main=document.createElement('button');main.className='wp-task-main';main.onclick=()=>openEdit(event);
+    const line=document.createElement('span');line.className='wp-task-top';
+    const time=document.createElement('span');time.className='wp-time';time.textContent=event.time?(event.time+(event.endTime?' – '+event.endTime:'')):'Без времени';
+    const type=document.createElement('span');type.className='wp-kind '+event.type;type.textContent=TYPES[event.type]||'Задача';line.append(time,type);
+    const title=document.createElement('span');title.className='wp-task-title';title.textContent=event.title;
+    main.append(line,title);
+    if(event.notes){const notes=document.createElement('span');notes.className='wp-task-notes';notes.textContent=event.notes;main.appendChild(notes);}
+    if(conflicting){const warning=document.createElement('span');warning.className='wp-collision';warning.textContent='Проверьте пересечение времени';main.appendChild(warning);}
+    row.append(label,main);return row;
+  }
+  function renderWeek() {
+    if(!$('wpDays'))return;
+    const end=P.plusDays(week,6), startKey=P.dateKey(week),endKey=P.dateKey(end);
+    $('wpRange').textContent=readable(startKey)+' — '+readable(endKey)+' '+end.getFullYear();
+    const weekEvents=events.filter(e=>e.date>=startKey&&e.date<=endKey), done=weekEvents.filter(e=>e.done).length;
+    $('wpStats').textContent=weekEvents.length?`${weekEvents.length} ${plural(weekEvents.length,'дело','дела','дел')} · выполнено ${done}`:'Неделя свободна';
+    $('wpProgress').style.width=(weekEvents.length?Math.round(done/weekEvents.length*100):0)+'%';
+    const ids=conflictIds(weekEvents),days=$('wpDays'),pills=$('wpPills');days.innerHTML='';pills.innerHTML='';
+    for(let i=0;i<7;i++) {
+      const date=P.plusDays(week,i),key=P.dateKey(date),list=weekEvents.filter(e=>e.date===key);
+      const button=document.createElement('button');button.className='wp-pill '+(key===selected?'chosen ':'')+(key===today()?'is-today':'');
+      button.setAttribute('aria-label',readable(key));button.setAttribute('aria-pressed',String(key===selected));
+      button.innerHTML='<span>'+date.toLocaleDateString('ru-RU',{weekday:'short'})+'</span><strong>'+date.getDate()+'</strong><i>'+list.filter(e=>!e.done).length+'</i>';
+      button.onclick=()=>{selected=key;$('wpDefaultDate').value=key;renderHome();$('wp-day-'+key)?.scrollIntoView({behavior:'smooth',block:'start'});};pills.appendChild(button);
+      const section=document.createElement('section');section.id='wp-day-'+key;section.className='wp-day '+(key===today()?'today ':'')+(key===selected?'selected':'');
+      const header=document.createElement('div');header.className='wp-day-head';
+      const heading=document.createElement('h3');heading.textContent=date.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+      const add=document.createElement('button');add.className='wp-add';add.textContent='+';add.setAttribute('aria-label','Добавить на '+readable(key));add.onclick=()=>openEdit(null,key);
+      header.append(heading,add);section.appendChild(header);
+      if(!list.length){const empty=document.createElement('p');empty.className='wp-day-empty';empty.textContent='Пока нет дел';section.appendChild(empty);}
+      list.slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99')).forEach(e=>section.appendChild(taskRow(e,ids.has(e.id))));
+      days.appendChild(section);
+    }
+    renderAll();
+  };
+  function plural(n,one,few,many){return n%10===1&&n%100!==11?one:n%10>=2&&n%10<=4&&!(n%100>=12&&n%100<=14)?few:many;}
+  function renderAll() {}
+  window.renderHome=function(){previousRenderHome();renderWeek();};
+  async function mutate(action) {
+    if(busy)return false;busy=true;document.body.classList.add('wp-saving');
+    const backup=JSON.parse(JSON.stringify(events));
+    try{action();sortEvents();await saveAllEvents();refresh();return true;}
+    catch(e){events=backup;refresh();toast('warn','Не удалось сохранить. Проверьте доступное место на устройстве.');return false;}
+    finally{busy=false;document.body.classList.remove('wp-saving');}
+  }
+  async function setDone(id,value){await mutate(()=>{const e=events.find(e=>e.id===id);if(e)e.done=value;});}
+  function openEdit(event=null,date=selected) {
+    editing=event?.id||null;
+    $('eventModal').style.display='flex';
+    document.querySelector('#eventModal .modal-title').textContent=event?'Изменить дело':'Новое дело';
+    $('evType').value=event?.type||'task';$('evTitle').value=event?.title||'';$('evDate').value=event?.date||date;
+    $('evTime').value=event?.time||'';$('wpEndTime').value=event?.endTime||'';$('evNotes').value=event?.notes||'';
+    $('wpDelete').hidden=!event;$('wpSaveManual').textContent=event?'Сохранить изменения':'Добавить в расписание';
+    $('evTitle').focus();
+  }
+  window.openEventModal=()=>openEdit(null,selectedDate||selected);
+  window.closeModal=function(){$('eventModal').style.display='none';editing=null;};
+  window.saveManualEvent=async function() {
+    if(busy)return;
+    const title=$('evTitle').value.trim(),date=$('evDate').value,time=$('evTime').value,endTime=$('wpEndTime').value;
+    if(!title||!P.localDate(date)||!P.validTime(time)||!P.validTime(endTime)||(endTime&&(!time||endTime<=time)))return toast('warn','Укажите название, дату и правильное время.');
+    const id=editing;const existing=events.find(e=>e.id===id);
+    const record={...(existing||{}),id:id||uid(),type:normalizeType($('evType').value),title,date,time,endTime,notes:$('evNotes').value.trim(),done:!!existing?.done};
+    if(!existing||existing.date!==date||existing.time!==time)Object.assign(record,{alerted30:false,alerted5:false,alertedNow:false});
+    const ok=await mutate(()=>{if(existing)events=events.map(e=>e.id===id?record:e);else events.push(record);});
+    if(ok){closeModal();goWeek(date);toast('success','Дело сохранено');}
+  };
+  window.deleteEvent=async function(id){if(await mutate(()=>{events=events.filter(e=>e.id!==id);}))toast('success','Запись удалена');};
+  $('wpDelete')?.remove();
+  function renderDrafts() {
+    const box=$('wpDraftRows');box.innerHTML='';$('wpReview').hidden=!drafts.length;
+    $('wpSaveBatch').textContent='Сохранить '+drafts.length+' '+plural(drafts.length,'задачу','задачи','задач');
+    const order=drafts.map((d,i)=>({d,i})).sort((a,b)=>(a.d.date+' '+(a.d.time||'99:99')).localeCompare(b.d.date+' '+(b.d.time||'99:99')));
+    order.forEach(({d,i})=>{
+      const card=document.createElement('div');card.className='wp-draft';
+      const head=document.createElement('div');head.className='wp-draft-head';
+      const name=document.createElement('span');name.textContent='Задача '+(i+1);
+      const remove=document.createElement('button');remove.className='wp-remove';remove.textContent='Убрать';remove.onclick=()=>{drafts.splice(i,1);renderDrafts();};head.append(name,remove);card.appendChild(head);
+      function field(label,type,key) {
+        const wrap=document.createElement('label');wrap.className='wp-input-label';wrap.textContent=label;
+        const input=document.createElement('input');input.type=type;input.className='field';input.value=d[key]||'';
+        input.oninput=()=>{d[key]=input.value;};input.onchange=()=>{if(key==='date'||key==='time')renderDrafts();};wrap.appendChild(input);return wrap;
+      }
+      card.appendChild(field('Что нужно сделать','text','title'));
+      const grid=document.createElement('div');grid.className='wp-fields';grid.append(field('Дата','date','date'),field('Начало','time','time'),field('Окончание','time','endTime'));card.appendChild(grid);
+      const notice=document.createElement('div');notice.className=d.warnings.length?'wp-review-warning':'wp-draft-note';
+      notice.textContent=d.warnings.length?d.warnings.join(' '):(d.explicitDate?'Дата из диктовки': 'Дата по контексту: '+readable(d.date))+(d.time?'':' · без указанного времени');card.appendChild(notice);
+      box.appendChild(card);
+    });
+  }
+  function splitText(text,base=new Date(),extra='') {
+    if(!String(text).trim())return toast('warn','Продиктуйте или введите задачи');
+    if(parsing||busy)return;parsing=true;
+    try{drafts=P.parseBatch(text,base,$('wpDefaultDate').value||selected);if(extra)drafts.forEach(d=>d.warnings.push(extra));renderDrafts();}
+    finally{parsing=false;}
+  }
+  window.autoSaveVoice=function(text,base=new Date(),extra=''){
+    $('wpVoiceText').value=text;draftAnchor=base;persistDraft();splitText(text,base,extra);
+    switchTab('week',document.getElementById('wpNav'));
+  };
+  window.clearVoiceFieldSoon=function(){};
+  async function saveBatch() {
+    if(busy||!drafts.length)return;
+    if(drafts.some(d=>!d.title.trim()||!P.localDate(d.date)||!P.validTime(d.time)||!P.validTime(d.endTime)||(d.endTime&&(!d.time||d.endTime<=d.time))))return toast('warn','Проверьте названия, даты и время всех задач.');
+    const raw=$('wpVoiceText').value.trim(),candidates=[],seen=new Set(events.map(e=>JSON.stringify([e.title,e.date,e.time])));
+    let duplicates=0;
+    for(const d of drafts) {
+      const key=JSON.stringify([d.title.trim(),d.date,d.time]);if(seen.has(key)){duplicates++;continue;}seen.add(key);
+      candidates.push({id:uid(),title:d.title.trim(),date:d.date,time:d.time,endTime:d.endTime,type:inferVoiceType(d.title),notes:'',originalText:raw,done:false,alerted30:false,alerted5:false,alertedNow:false});
+    }
+    if(!candidates.length)return toast('info','Все эти задачи уже есть в расписании');
+    const overlapping=conflictIds([...events,...candidates]);
+    if(await mutate(()=>events.push(...candidates))) {
+      const first=candidates.slice().sort((a,b)=>a.date.localeCompare(b.date))[0];
+      drafts=[];renderDrafts();$('wpVoiceText').value='';localStorage.removeItem(DRAFT_KEY);goWeek(first.date);
+      toast('success',`Сохранено: ${candidates.length}`+(duplicates?`. Повторов пропущено: ${duplicates}`:''));
+      if(candidates.some(e=>overlapping.has(e.id)))toast('warn','Есть пересечение времени. Оно отмечено в расписании.');
+    }
+  }
+  function micUI(state) {
+    const running=state==='running';micRunning=running;
+    $('wpMicBtn').disabled=state==='stopping';$('wpMicBtn').classList.toggle('recording',running);
+    $('wpMicIcon').textContent=running?'■':'●';$('wpMicLabel').textContent=running?'Завершить':state==='stopping'?'Обработка…':'Диктовать';
+    $('wpParse').disabled=state!=='idle';$('wpVoiceText').readOnly=state!=='idle';
+    if(state==='idle'){clearInterval(micTimerHandle);micTimerHandle=null;$('wpMicTimer').textContent='';}
+  }
+  function startWeeklyMic() {
+    if(session||busy)return;
+    if(micRunning){toast('info','Сначала завершите диктовку на главной странице.');return;}
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){toast('info','Нажмите микрофон на клавиатуре iPhone в поле задач, затем «Разобрать задачи».');$('wpVoiceText').focus();return;}
+    const rec=new SR(),s={rec,prefix:$('wpVoiceText').value.trim(),final:'',interim:'',error:'',done:false,base:new Date()};session=s;recognition=rec;
+    rec.lang='ru-RU';rec.continuous=true;rec.interimResults=true;
+    rec.onresult=e=>{if(s.done)return;const a=[],b=[];for(let i=0;i<e.results.length;i++)(e.results[i].isFinal?a:b).push(e.results[i][0].transcript);s.final=a.join(' ');s.interim=b.join(' ');$('wpVoiceText').value=[s.prefix,s.final,s.interim].filter(Boolean).join('\n');persistDraft();};
+    rec.onerror=e=>{s.error=e.error||'unknown';toast('warn',e.error==='not-allowed'?'Разрешите браузеру доступ к микрофону.':'Распознавание прервано. Проверьте текст.');};
+    rec.onend=()=>{if(s.done)return;s.done=true;session=null;micUI('idle');const text=$('wpVoiceText').value.trim();if(text)splitText(text,s.base,s.error||s.interim?'Диктовка прервалась. Проверьте задачу.':'');else if(!s.error)toast('info','Речь не распознана');};
+    try{rec.start();micUI('running');micStartedAt=Date.now();micTimerHandle=setInterval(updateWeeklyTimer,1000);updateWeeklyTimer();}
+    catch(e){s.done=true;session=null;micUI('idle');toast('warn','Не удалось включить микрофон. Можно использовать диктовку клавиатуры.');}
+  };
+  function stopWeeklyMic(){if(!session)return;micUI('stopping');try{session.rec.stop();}catch(e){session.error='stop';session.rec.onend();}}
+  function updateWeeklyTimer(){const n=Math.floor((Date.now()-micStartedAt)/1000);$('wpMicTimer').textContent=Math.floor(n/60)+':'+String(n%60).padStart(2,'0');}
+  window.weeklyToggleMic=function(){if(session)stopWeeklyMic();else startWeeklyMic();};
+  window.toggleMic=function(){if(session)stopWeeklyMic();else previousToggleMic();};
+  function persistDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({text:$('wpVoiceText').value,date:$('wpDefaultDate').value,anchor:draftAnchor.toISOString()}));}catch(e){}}
+  function exportBackup(){const blob=new Blob([JSON.stringify({app:'aibulatov.ai',version:1,exportedAt:new Date().toISOString(),events},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='aibulatov-tasks-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+  // A separate fifth tab; keep the existing home, calendar, AI and full register.
+  const weekly=document.createElement('section');weekly.id='p-week';weekly.className='section';
+  weekly.innerHTML=`
+    <header class="header"><div class="logo-wrap"><div class="logo">aibulatov.ai</div><div class="sublogo">Мой рабочий ритм</div></div><button class="theme-toggle" onclick="toggleTheme()" aria-label="Переключить тему"></button></header>
+    <div class="wp-intro"><span class="wp-eyebrow">ДЕЛА ПО ПОРЯДКУ</span><h1>Еженедельник</h1><p>Продиктуйте планы, проверьте даты и сохраните. Всё встанет на своё место.</p></div>
+    <div class="wp-layout"><div class="wp-compose card"><div class="wp-compose-head"><strong>Что нужно сделать?</strong><span>Можно сразу несколько задач</span></div>
+      <label class="wp-default-label" for="wpDefaultDate">Если день не назван</label><input id="wpDefaultDate" class="field" type="date" value="${selected}" aria-label="Дата по умолчанию">
+      <label class="sr-only" for="wpVoiceText">Продиктуйте или введите планы</label><textarea id="wpVoiceText" class="transcript-box" placeholder="Завтра в десять суд по делу Ивановой, в два часа дня консультация. Затем подготовить иск. В пятницу в одиннадцать встреча."></textarea>
+      <div class="wp-compose-actions"><button id="wpMicBtn" class="wp-mic" onclick="weeklyToggleMic()"><span id="wpMicIcon">●</span><span id="wpMicLabel">Диктовать</span><span id="wpMicTimer"></span></button><button id="wpParse" class="wp-primary">Разобрать задачи</button></div>
+      <p class="wp-hint">Между задачами можно говорить «затем» или «следующая задача». Телефон распознаёт речь, приложение распределяет дела.</p>
+      <div id="wpReview" hidden><div class="wp-review-title">Проверьте перед сохранением</div><p class="wp-hint">Дата без года относится к текущему году. Время без «утра» или «вечера» читается буквально: «в два» = 02:00.</p><div id="wpDraftRows"></div><button id="wpSaveBatch" class="wp-primary wp-wide"></button></div>
+    </div><div class="wp-schedule"><div class="wp-week-title"><div><h2>Еженедельник</h2><span id="wpStats"></span></div><button id="wpToday" class="wp-small">Сегодня</button></div>
+      <div class="wp-week-nav"><button id="wpPrevious" aria-label="Предыдущая неделя">‹</button><strong id="wpRange"></strong><button id="wpNext" aria-label="Следующая неделя">›</button></div><div class="wp-progress"><div id="wpProgress"></div></div><div id="wpPills" class="wp-pills"></div><div id="wpDays"></div>
+      <div class="wp-bottom"><span>Нажмите на дело, чтобы изменить его</span><button id="wpExport">Скачать копию задач</button></div>
+    </div></div>`;
+  document.querySelector('.main').appendChild(weekly);
+  const nav=$('wpNav');nav.onclick=()=>{switchTab('week',nav);renderWeek();};document.querySelector('.nav').appendChild(nav);
+  document.querySelector('#p-home .helper').textContent='Назовите задачи, даты и время. После диктовки записи откроются в еженедельнике для проверки и сохранения.';
+  const endWrap=document.createElement('label');endWrap.className='wp-input-label';endWrap.textContent='Окончание, если известно';endWrap.innerHTML+='<input id="wpEndTime" class="field" type="time">';$('evTime').after(endWrap);
+  // Labels for the existing edit form.
+  for(const [id,text]of [['evType','Вид дела'],['evTitle','Название'],['evDate','Дата'],['evTime','Начало'],['evNotes','Комментарий']]){const label=document.createElement('label');label.htmlFor=id;label.className='wp-input-label';label.textContent=text;$(id).before(label);}
+  $('evTitle').removeAttribute('maxlength');
+  const manual=document.querySelector('#eventModal .full-btn');manual.id='wpSaveManual';
+  const del=document.createElement('button');del.id='wpDelete';del.className='wp-delete';del.textContent='Удалить дело';del.hidden=true;del.onclick=async()=>{const id=editing;if(id&&confirm('Удалить это дело?')){await deleteEvent(id);closeModal();}};manual.after(del);
+  const close=document.createElement('button');close.className='wp-small';close.textContent='Закрыть';close.style.marginTop='12px';close.onclick=closeModal;del.after(close);
+  $('wpPrevious').onclick=()=>goWeek(P.dateKey(P.plusDays(week,-7)));$('wpNext').onclick=()=>goWeek(P.dateKey(P.plusDays(week,7)));$('wpToday').onclick=()=>goWeek(today());
+  $('wpDefaultDate').onchange=()=>{if(P.localDate($('wpDefaultDate').value)){selected=$('wpDefaultDate').value;persistDraft();}};
+  $('wpParse').onclick=()=>splitText($('wpVoiceText').value,draftAnchor);$('wpSaveBatch').onclick=saveBatch;
+  $('wpVoiceText').oninput=()=>{if(!$('wpVoiceText').value.trim())draftAnchor=new Date();persistDraft();};
+  $('wpExport').onclick=exportBackup;
+  try{const draft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');if(draft?.text){$('wpVoiceText').value=draft.text;if(P.localDate(draft.date))$('wpDefaultDate').value=draft.date;const d=new Date(draft.anchor);if(!isNaN(d))draftAnchor=d;}}catch(e){}
+  // Completed events do not trigger reminders.
+  window.checkReminders=function(){const now=new Date();let changed=false;for(const e of events){if(e.done||!e.time)continue;const diff=(new Date(e.date+'T'+e.time+':00')-now)/60000;let key,title;if(diff<=30&&diff>5){key='alerted30';title='Скоро: '+e.time;}else if(diff<=5&&diff>0){key='alerted5';title='Через несколько минут';}else if(diff<=0&&diff>=-1){key='alertedNow';title='Время начинать';}if(key&&!e[key]){e[key]=true;changed=true;playAlarm5();showAlarm(title,e.title+'\n'+formatReadableDate(e.date)+' '+e.time);}}if(changed)saveAllEvents().catch(()=>{});};
+  window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  renderWeek();
+})();
+
 </script>
 </body>
 </html>
